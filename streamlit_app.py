@@ -122,9 +122,7 @@ def encrypt_data(data):
 def link_funding_source(user_id):
     """Prompt user to link a bank account or crypto wallet."""
     print("To start using Break Bread, please link a funding source.")
-    
     choice = input("Link (1) Bank Account or (2) Crypto Wallet? ")
-    
     if choice == "1":
         bank_account = input("Enter your bank account number: ")
         users_db[user_id].linked_bank_accounts.append(bank_account)
@@ -136,12 +134,55 @@ def link_funding_source(user_id):
     else:
         print("Invalid selection. Please choose 1 (Bank) or 2 (Crypto).")
 
+def security_check(transaction):
+    """Perform security and fraud detection checks."""
+    sender = users_db[transaction.sender_id]
+    # recipient = users_db[transaction.recipient_id]  # currently unused
+
+    # Check 1: Transaction amount within limits
+    if transaction.amount > sender.transaction_limit:
+        security_logs.append({
+            "timestamp": datetime.now(),
+            "event": "transaction_over_limit",
+            "transaction_id": transaction.transaction_id,
+            "details": f"Amount: {transaction.amount}, Limit: {sender.transaction_limit}"
+        })
+        return False
+    
+    # Check 2: Unusual transaction pattern (simplified)
+    recent_transactions = [t for t in transactions_db 
+                           if t.sender_id == transaction.sender_id and 
+                           t.timestamp > datetime.now() - timedelta(hours=24)]
+    if len(recent_transactions) > 10:
+        security_logs.append({
+            "timestamp": datetime.now(),
+            "event": "unusual_activity",
+            "transaction_id": transaction.transaction_id,
+            "details": f"High frequency: {len(recent_transactions)} transactions in 24h"
+        })
+        return False
+    
+    # Check 3: Large amount to new recipient
+    previous_to_recipient = any(t.recipient_id == transaction.recipient_id 
+                                for t in transactions_db 
+                                if t.sender_id == transaction.sender_id)
+    if transaction.amount > 500 and not previous_to_recipient:
+        security_logs.append({
+            "timestamp": datetime.now(),
+            "event": "large_amount_new_recipient",
+            "transaction_id": transaction.transaction_id,
+            "details": f"Amount: {transaction.amount}, New recipient: {transaction.recipient_id}"
+        })
+        additional_auth = input("Large transfer to new recipient. Confirm with 2FA code: ")
+        if additional_auth != "123456":  # Simulated 2FA verification
+            return False
+    
+    return True
+
 def p2p_transaction(sender_id):
     """Algorithm for peer-to-peer money transfer."""
     print("=== Break Bread P2P Transaction ===")
-    
     recipient_identifier = input("Enter recipient's phone, email, or App ID: ")
-    
     recipient = None
     for user in users_db.values():
         if (user.phone == recipient_identifier or 
@@ -149,159 +190,106 @@ def p2p_transaction(sender_id):
             user.app_id == recipient_identifier):
             recipient = user
             break
-    
     if not recipient:
         print("Recipient not found. Please check the identifier and try again.")
         return False
-    
     try:
         amount = float(input("Enter amount to send: "))
         note = input("Add an optional note: ")
     except ValueError:
         print("Invalid amount. Please enter a valid number.")
         return False
-    
     sender = users_db[sender_id]
     fee = round(amount * 0.015, 2)
-    
-    # ✅ Fix: include fee in balance check
-    if sender.balance < amount + fee:
+    if sender.balance < amount + fee:  # include fee in check
         print("Insufficient balance. Would you like to add funds from your linked account?")
         return False
-    
     print(f"Transaction fee: ${fee}. Total amount: ${amount + fee}")
-    
-    auth_method = input("Authenticate with (1) PIN, (2) Biometrics, or (3) 2FA: ")
-    
-    transaction = Transaction(sender_id, recipient.user_id, amount, fee, note)
-    
-    if not security_check(transaction):
-        transaction.status = "flagged"
-        transactions_db.append(transaction)
+    input("Authenticate (press Enter to simulate)... ")
+    t = Transaction(sender_id, recipient.user_id, amount, fee, note)
+    if not security_check(t):
+        t.status = "flagged"
+        transactions_db.append(t)
         print("Transaction flagged for security review. Please wait for verification.")
         return False
-    
     sender.balance -= (amount + fee)
     recipient.balance += amount
-    transaction.status = "completed"
-    
+    t.status = "completed"
     global break_bread_fund
     break_bread_fund += fee
-    
-    transactions_db.append(transaction)
-    
+    transactions_db.append(t)
     print(f"Transaction completed! ${amount} sent to {recipient.app_id}.")
     print(f"New balance: ${sender.balance}")
-    
     return True
 
 def investment_portfolio(user_id):
     """Algorithm for investment features."""
     print("=== Break Bread Investment Portal ===")
     print("1. Gold Bullion\n2. Silver Bullion\n3. Treasury Bonds")
-    
     try:
         choice = int(input("Select an option (1-3): "))
         asset_types = ["gold", "silver", "treasury_bonds"]
         if choice not in [1, 2, 3]:
             print("Invalid selection.")
             return False
-        
         asset_type = asset_types[choice-1]
         asset = investment_assets[asset_type]
-        
-        if asset_type in ["gold", "silver"]:
-            print(f"Current price: ${asset['price_per_ounce']} per ounce")
-        else:
-            print(f"Current price: ${asset['price_per_unit']} per unit")
-        
+        price_key = "price_per_ounce" if asset_type in ["gold", "silver"] else "price_per_unit"
+        print(f"Current price: ${asset[price_key]}")
         print(f"Fee: {asset['fee_percent'] * 100}%")
-        
         investment_amount = float(input("Enter amount to invest: $"))
-        
-        units = investment_amount / (
-            asset['price_per_ounce'] if asset_type in ["gold", "silver"] else asset['price_per_unit']
-        )
-        
-        # ✅ Fix: round commission
-        commission = round(investment_amount * asset['fee_percent'], 2)
-        
+        units = investment_amount / asset[price_key]
+        commission = round(investment_amount * asset['fee_percent'], 2)  # rounded
         print(f"You will receive: {units:.4f} units")
         print(f"Commission: ${commission:.2f}")
         print(f"Total cost: ${investment_amount + commission:.2f}")
-        
         user = users_db[user_id]
         if user.balance < investment_amount + commission:
             print("Insufficient balance.")
             return False
-        
         password = input("Enter your password to confirm: ")
         if not verify_password(user.password_hash, password):
             print("Authentication failed.")
             return False
-        
         user.balance -= (investment_amount + commission)
-        
         if user_id not in user_portfolios:
             user_portfolios[user_id] = {}
-        
         user_portfolios[user_id][asset_type] = user_portfolios[user_id].get(asset_type, 0.0) + units
-        
         global break_bread_fund
         break_bread_fund += commission
-        
         print("Investment successful!")
         print(f"New balance: ${user.balance}")
         print(f"Portfolio: {user_portfolios[user_id]}")
         return True
-        
     except ValueError:
         print("Invalid input.")
         return False
 
-# ----------------------------
-# Demo Execution
-# ----------------------------
 def run_demo():
     print("🚀 Break Bread App Simulation")
     print("=" * 40)
-    
     # Demo users
-    test_user1 = User("test_user_1", phone="+1234567890", app_id="johndoe", password_hash=hash_password("password123"))
-    test_user1.balance = 1000.00
-    test_user1.verified = True
-    users_db[test_user1.user_id] = test_user1
-    
-    test_user2 = User("test_user_2", email="jane@example.com", app_id="janedoe", password_hash=hash_password("password123"))
-    test_user2.balance = 500.00
-    test_user2.verified = True
-    users_db[test_user2.user_id] = test_user2
-    
+    u1 = User("test_user_1", phone="+1234567890", app_id="johndoe", password_hash=hash_password("password123"))
+    u1.balance = 1000.00; u1.verified = True; users_db[u1.user_id] = u1
+    u2 = User("test_user_2", email="jane@example.com", app_id="janedoe", password_hash=hash_password("password123"))
+    u2.balance = 500.00; u2.verified = True; users_db[u2.user_id] = u2
     while True:
         print("\nBreak Bread Main Menu:")
         print("1. P2P Transaction\n2. Investment Portfolio\n3. Exit")
-        
         choice = input("Select an option: ")
         if choice == "1":
             uid = input("Enter your user ID: ")
-            if uid in users_db:
-                p2p_transaction(uid)
-            else:
-                print("User not found.")
+            if uid in users_db: p2p_transaction(uid)
+            else: print("User not found.")
         elif choice == "2":
             uid = input("Enter your user ID: ")
-            if uid in users_db:
-                investment_portfolio(uid)
-            else:
-                print("User not found.")
+            if uid in users_db: investment_portfolio(uid)
+            else: print("User not found.")
         elif choice == "3":
-            print("Thank you for using Break Bread!")
-            break
+            print("Thank you for using Break Bread!"); break
         else:
             print("Invalid option. Please try again.")
 
-# ⚠️ Note: For Streamlit deployment, do NOT auto-run.
-# Uncomment below ONLY if running in terminal:
+# Note: DO NOT auto-run in Streamlit. For terminal use only:
 # if __name__ == "__main__":
 #     run_demo()
-    run_demo()
