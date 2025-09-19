@@ -1,6 +1,3 @@
-What app or software or platform can I 
-
-
 import uuid
 import hashlib
 import json
