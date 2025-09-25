@@ -168,4 +168,152 @@ with tab1:
 # ----------------------------
 with tab2:
     st.subheader("Request money")
+    requester = bb.users_db[st.session_state.current_user_id]
 
+    from_identifier = st.text_input("From (App ID, phone, or email)")
+    req_amount = st.number_input("Amount to request", min_value=0.0, step=1.0, key="req_amount")
+    simulate_auto_approve = st.checkbox("Simulate recipient auto-approve (demo)", value=True)
+
+    if st.button("Send request"):
+        payer = get_user_by_identifier(from_identifier.strip()) if from_identifier else None
+        if not payer:
+            st.error("Payer not found.")
+        elif req_amount <= 0:
+            st.error("Enter a positive amount.")
+        else:
+            if simulate_auto_approve:
+                if payer.balance >= req_amount:
+                    payer.balance -= req_amount
+                    requester.balance += req_amount
+                    st.success(f"Request approved. Received ${req_amount:.2f} from **{payer.app_id or payer.user_id}**.")
+                else:
+                    st.warning("Payer has insufficient funds (simulated).")
+            else:
+                rid = str(uuid.uuid4())
+                link = f"https://breakbread.app/request/{rid}"
+                st.info(f"Share this link with the payer: {link}")
+
+# ----------------------------
+# Tab 3: Invest
+# ----------------------------
+with tab3:
+    st.subheader("Invest")
+    investor = bb.users_db[st.session_state.current_user_id]
+
+    # Show available assets & prices
+    st.caption("Available assets & prices")
+    assets_view = []
+    for k, v in bb.investment_assets.items():
+        fee_pct = v.get("fee_percent", 0.0) * 100
+        label = price_label(k)
+        assets_view.append({"Asset": k.replace("_", " ").title(), "Price": label, "Fee %": f"{fee_pct:.2f}%"})
+    st.dataframe(pd.DataFrame(assets_view), use_container_width=True, hide_index=True)
+
+    # Choose asset and invest
+    asset_keys = list(bb.investment_assets.keys())
+    sel_asset_key = st.selectbox("Choose asset", options=asset_keys,
+                                 format_func=lambda k: k.replace("_", " ").title())
+    invest_amt = st.number_input("Investment amount ($)", min_value=0.0, step=10.0)
+    pwd_inv = st.text_input("Password (to confirm)", type="password", key="pwd_inv")
+
+    if st.button("Execute trade", type="primary"):
+        if invest_amt <= 0:
+            st.error("Enter a positive investment amount.")
+        elif not bb.verify_password(investor.password_hash, pwd_inv):
+            st.error("Authorization failed: wrong password.")
+        else:
+            asset = bb.investment_assets[sel_asset_key]
+            price_key = "price_per_ounce" if "price_per_ounce" in asset else "price_per_unit"
+            units = invest_amt / asset[price_key]
+            commission = round(invest_amt * asset["fee_percent"], 2)
+
+            total_cost = invest_amt + commission
+            if investor.balance < total_cost:
+                st.error(f"Insufficient balance. Need ${total_cost:.2f}.")
+            else:
+                # Deduct & update portfolio
+                investor.balance -= total_cost
+                if investor.user_id not in bb.user_portfolios:
+                    bb.user_portfolios[investor.user_id] = {}
+                bb.user_portfolios[investor.user_id][sel_asset_key] = \
+                    bb.user_portfolios[investor.user_id].get(sel_asset_key, 0.0) + units
+
+                # Add to fund
+                bb.break_bread_fund += commission
+
+                # Record investment (optional object)
+                inv = bb.Investment(investor.user_id, sel_asset_key, float(invest_amt), float(units), float(commission))
+                # You could keep a separate investments_db if desired
+
+                st.success(
+                    f"Bought **{units:.4f}** units of **{sel_asset_key.replace('_', ' ').title()}** "
+                    f"for ${invest_amt:.2f}. Commission ${commission:.2f}. "
+                    f"New balance: ${investor.balance:.2f}"
+                )
+
+# ----------------------------
+# Tab 4: Portfolio
+# ----------------------------
+with tab4:
+    st.subheader("Your portfolio")
+    u = bb.users_db[st.session_state.current_user_id]
+    port = bb.user_portfolios.get(u.user_id, {})
+    if not port:
+        st.info("No holdings yet.")
+    else:
+        rows = []
+        for k, units in port.items():
+            a = bb.investment_assets.get(k, {})
+            price = a.get("price_per_ounce") or a.get("price_per_unit") or 0.0
+            value = units * price
+            rows.append({
+                "Asset": k.replace("_", " ").title(),
+                "Units": round(units, 6),
+                "Price": price_label(k) if a else "$0",
+                "Est. Value ($)": f"{value:,.2f}"
+            })
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+# ----------------------------
+# Tab 5: Admin / Logs
+# ----------------------------
+with tab5:
+    st.subheader("Admin & Logs")
+    colA, colB = st.columns(2)
+    with colA:
+        st.metric("Break Bread Fund", f"${bb.break_bread_fund:,.2f}")
+        if st.button("Allocate Fund (simulate quarter close)"):
+            # Same allocation rules from your PRD (40/35/25)
+            total = bb.break_bread_fund
+            if total <= 0:
+                st.info("No funds to allocate.")
+            else:
+                community = total * 0.40
+                rnd = total * 0.35
+                emergency = total * 0.25
+                bb.break_bread_fund = 0.0
+                st.success(
+                    f"Allocated: Community ${community:,.2f} | R&D ${rnd:,.2f} | Emergency ${emergency:,.2f}"
+                )
+    with colB:
+        st.caption("Security events")
+        if bb.security_logs:
+            logs = [{
+                "time": e["timestamp"].isoformat(timespec="seconds"),
+                "event": e["event"],
+                "transaction_id": e["transaction_id"],
+                "details": e["details"],
+            } for e in bb.security_logs]
+            st.dataframe(pd.DataFrame(logs), use_container_width=True, hide_index=True)
+        else:
+            st.write("No security events recorded.")
+
+    st.divider()
+    st.caption("Users snapshot")
+    if bb.users_db:
+        users_df = pd.DataFrame([u.to_dict() | {"created_at": u.created_at.isoformat(timespec="seconds")}
+                                 for u in bb.users_db.values()])
+        st.dataframe(users_df, use_container_width=True, hide_index=True)
+
+# Footer
+st.caption("⚠️ Demo only — in-memory data resets on redeploy. Not financial advice.")
