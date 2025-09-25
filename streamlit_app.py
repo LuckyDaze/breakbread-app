@@ -62,8 +62,21 @@ def price_label(asset_key: str) -> str:
 # Streamlit App
 # ----------------------------
 st.set_page_config(page_title="Break Bread", page_icon="🍞", layout="centered")
-st.title("🍞 Break Bread")
-st.caption("A peer-to-peer payments & simple investing demo (in-memory)")
+# Display custom logo and tagline
+from PIL import Image
+
+logo = Image.open("assets/BB_logo.png")
+
+# Center the logo with Streamlit columns
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    st.image(logo, use_container_width=True)  # <-- logo replaces emoji
+
+# Custom tagline below logo
+st.markdown(
+    "<h3 style='text-align: center; color: gray;'>Peer-to-Peer Payments & Smart Investing</h3>",
+    unsafe_allow_html=True
+)
 
 # Seed demo data
 ensure_demo_users()
