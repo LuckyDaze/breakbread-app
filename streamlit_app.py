@@ -4,6 +4,17 @@ import time
 import uuid
 import pandas as pd
 import streamlit as st
+import streamlit as st
+
+st.set_page_config(
+    page_title="Break Bread",   # shows in the tab text
+    page_icon="assets/favicon.png",  # path to your favicon
+    layout="wide"
+)
+st.sidebar.image("assets/breakbread-logo.png", use_container_width=True)
+# OR in main body:
+# st.image("assets/breakbread-logo.png", width=200)
+
 
 # Import your domain logic / data stores
 # Make sure core.py sits next to this file at the repo root.
