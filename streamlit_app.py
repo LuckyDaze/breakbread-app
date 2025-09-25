@@ -7,7 +7,7 @@ import streamlit as st
 
 # Import your domain logic / data stores
 # Make sure core.py sits next to this file at the repo root.
-import core as bb  # exposes users_db, transactions_db, investment_assets, helpers, models
+import core as bb
 
 
 # ----------------------------
