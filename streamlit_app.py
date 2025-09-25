@@ -74,7 +74,7 @@ with col2:
 
 # Custom tagline below logo
 st.markdown(
-    "<h3 style='text-align: center; font-size:78px;'><b><i>Break Bread. Build Wealth.</i></b></p>",
+    "<h3 style='text-align: center; font-size:36px;'><b><i>Break Bread. Build Wealth.</i></b></p>",
     unsafe_allow_html=True
 )
 
