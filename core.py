@@ -1,4 +1,3 @@
-# core.py
 import uuid
 import hashlib
 from datetime import datetime, timedelta
