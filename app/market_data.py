@@ -1,4 +1,3 @@
-# app/market_data.py
 import yfinance as yf
 
 class MarketData:
