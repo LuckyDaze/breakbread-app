@@ -1,12 +1,24 @@
 import yfinance as yf
+import streamlit as st
 
-def get_yf_data(symbol, period="1d"):
-    ticker = yf.Ticker(symbol)
-    hist = ticker.history(period=period)
-    if hist.empty:
+def get_yf_data(symbol: str, period: str = "1d"):
+    try:
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period=period)
+        if hist.empty:
+            return None
+        
+        return {
+            "symbol": symbol,
+            "current_price": hist["Close"].iloc[-1],
+            "52w_high": hist["High"].max(),
+            "52w_low": hist["Low"].min(),
+        }
+    except Exception as e:
+        st.error(f"Error fetching data for {symbol}: {e}")
         return None
-    return {
-        "current_price": hist["Close"].iloc[-1],
-        "52w_high": hist["High"].max(),
-        "52w_low": hist["Low"].min(),
-    }
+
+# Example calls
+print(get_yf_data("^GSPC"))
+print(get_yf_data("^IXIC"))
+print(get_yf_data("BTC-USD"))
