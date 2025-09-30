@@ -20,7 +20,6 @@ def get_yf_data(symbol: str, period: str = "1d"):
     except Exception as e:
         st.error(f"Error fetching {symbol}: {e}")
         return None
-from __future__ import annotations
 import os
 import pandas as pd
 import streamlit as st
