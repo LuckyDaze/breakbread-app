@@ -1,4 +1,4 @@
-# streamlit_app.py
+from __future__ import annotations
 import yfinance as yf
 import streamlit as st
 
