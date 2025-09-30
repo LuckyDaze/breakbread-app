@@ -1,4 +1,25 @@
 # streamlit_app.py
+import yfinance as yf
+import streamlit as st
+
+def get_yf_data(symbol: str, period: str = "1d"):
+    try:
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period=period)
+        if hist.empty:
+            return None
+        
+        return {
+            "symbol": symbol,
+            "current_price": hist["Close"].iloc[-1],
+            "52w_high": hist["High"].max(),
+            "52w_low": hist["Low"].min(),
+            "change": hist["Close"].iloc[-1] - hist["Close"].iloc[0],
+            "change_percent": ((hist["Close"].iloc[-1] - hist["Close"].iloc[0]) / hist["Close"].iloc[0]) * 100
+        }
+    except Exception as e:
+        st.error(f"Error fetching {symbol}: {e}")
+        return None
 from __future__ import annotations
 import os
 import pandas as pd
@@ -34,17 +55,16 @@ st.divider()
 ensure_demo_users()
 
 # ---------- Sidebar ----------
-st.sidebar.subheader("Account")
-who = st.sidebar.selectbox("Signed in as", list(USERS.keys()), format_func=lambda k: USERS[k]["app_id"])
-st.sidebar.metric("Balance", f"${USERS[who]['balance']:,.2f}")
-
-# Market mini-strip
 st.sidebar.subheader("Market Overview")
-for tkr, name in {"^GSPC":"S&P 500","^IXIC":"NASDAQ","BTC-USD":"Bitcoin"}.items():
-    try:
-        d = cached(tkr, "1d")
-        st.sidebar.metric(name, f"{d['current_price']:.0f}", f"{d['change_percent']:.2f}%")
-    except Exception:
+for tkr, name in {"^GSPC": "S&P 500", "^IXIC": "NASDAQ", "BTC-USD": "Bitcoin"}.items():
+    data = get_yf_data(tkr, "5d")  # 5-day window gives some % change
+    if data:
+        st.sidebar.metric(
+            name,
+            f"${data['current_price']:.2f}",
+            f"{data['change_percent']:.2f}%"
+        )
+    else:
         st.sidebar.write(f"{name}: n/a")
 
 # ---------- Tabs ----------
