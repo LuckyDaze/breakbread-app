@@ -45,7 +45,6 @@ with cols[0]:
     else:
         st.header("🍞")
 with cols[1]:
-    st.title("Break Bread")
     st.caption("_**Break Bread. Build Wealth.**_  — unified banking and investing")
 
 st.divider()
