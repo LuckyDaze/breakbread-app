@@ -1,9 +1,9 @@
 import streamlit as st
-
 try:
     import plotly.graph_objects as go
 except Exception:
-    go = None  # Plotly not available yet
+    go = None
+
 
 import yfinance as yf
 import pandas as pd
