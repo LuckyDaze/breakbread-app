@@ -25,6 +25,46 @@ def send_money(sender_id, recipient_identifier, amount, note=""):
         return False, "User not found."
     fee = round(amount * 0.015, 2)
 
+def find_user(identifier):
+    return _find_user(identifier)
+
+def get_user(identifier):
+    return _find_user(identifier)
+
+def request_money(requester_id, sender_identifier, amount, note=""):
+    sender = _find_user(sender_identifier)
+    requester = USERS.get(requester_id)
+    if not sender or not requester:
+        return False, "User not found."
+    if sender["balance"] < amount:
+        return False, "Insufficient funds."
+    sender["balance"] -= amount
+    requester["balance"] += amount
+    TRANSACTIONS.append({
+        "ts": datetime.now(),
+        "sender_id": sender["user_id"],
+        "recipient_id": requester_id,
+        "amount": amount,
+        "fee": 0,
+        "note": note
+    })
+    return True, f"Requested ${amount:.2f} from {sender['app_id']}."
+
+def simulate_paycheck(user_id, amount=1000.00):
+    user = USERS.get(user_id)
+    if not user:
+        return False, "User not found."
+    user["balance"] += amount
+    TRANSACTIONS.append({
+        "ts": datetime.now(),
+        "sender_id": "employer",
+        "recipient_id": user_id,
+        "amount": amount,
+        "fee": 0,
+        "note": "Simulated paycheck"
+    })
+    return True, f"Paycheck of ${amount:.2f} deposited."
+    
     # 👇 this is the “new code” continuation
     total = amount + fee
     if sender["balance"] < total:
