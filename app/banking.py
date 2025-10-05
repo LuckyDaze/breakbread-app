@@ -24,13 +24,19 @@ def send_money(sender_id, recipient_identifier, amount, note=""):
     if not sender or not recipient:
         return False, "User not found."
     fee = round(amount * 0.015, 2)
+
+    # 👇 this is the “new code” continuation
     total = amount + fee
     if sender["balance"] < total:
         return False, "Insufficient funds."
     sender["balance"] -= total
     recipient["balance"] += amount
     TRANSACTIONS.append({
-        "ts": datetime.now(), "sender_id": sender_id,
-        "recipient_id": recipient["user_id"], "amount": amount, "fee": fee, "note": note
+        "ts": datetime.now(),
+        "sender_id": sender_id,
+        "recipient_id": recipient["user_id"],
+        "amount": amount,
+        "fee": fee,
+        "note": note
     })
     return True, f"Sent ${amount:.2f} to {recipient['app_id']} (fee ${fee:.2f})."
