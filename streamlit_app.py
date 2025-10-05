@@ -10,6 +10,9 @@ from app.banking import ensure_demo_users, send_money, request_money, get_user, 
 from app.market_data import get_cached_data, chart, mini_indices
 from app.investing import place_order, portfolio_value, unrealized_gains, allocation_breakdown
 from app.security import fake_login, logout, fraud_check
+from app.notifications import toast_success, toast_info, toast_warn, price_alerts_tick, add_notification, get_notifications
+from app.utils import uid, format_money, seed_price_path
+from app.analytics import diversification_score
 from app.notifications import (
     toast_success,
     toast_info,
