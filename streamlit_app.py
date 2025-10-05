@@ -1,3 +1,4 @@
+from app.banking import ensure_demo_users, send_money, request_money, get_user, find_user, simulate_paycheck
 import os
 from datetime import datetime
 
@@ -19,7 +20,7 @@ from app.notifications import (
 )
 from app.utils import uid, format_money, seed_price_path
 from app.analytics import diversification_score
-from app.banking import ensure_demo_users, send_money, request_money, get_user, find_user, simulate_paycheck
+
 # Page configuration
 st.set_page_config(
     page_title="Break Bread",
