@@ -14,3 +14,7 @@ def user_activity_summary(user_id):
         "total_sent": total_sent,
         "total_received": total_received
     }
+from app.analytics import user_activity_summary
+summary = user_activity_summary("u1")
+st.write("Transactions:", summary["transactions"])
+st.write("Total Sent:", summary["total_sent"])
