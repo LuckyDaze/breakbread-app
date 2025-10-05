@@ -3,6 +3,12 @@ import random
 from datetime import datetime
 from app.market_data import get_cached_data
 
+def send_notification(user_id, message):
+    return f"Notification to {user_id}: {message}"
+
+def get_notifications(user_id):
+    return [f"Welcome back, {user_id}!", "Your balance has been updated."]
+
 def toast_success(message):
     st.toast(f"✅ {message}")
     add_notification(message)
