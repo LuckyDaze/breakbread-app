@@ -51,3 +51,25 @@ def cached(symbol, period):
         "52w_high": float(hist["High"].max()),
         "52w_low": float(hist["Low"].min()),
     }
+# 👇 add these at the bottom of app/market_data.py
+
+def get_cached_data(symbol, period="1mo"):
+    """Wrapper around the cached() function so streamlit_app.py can import it."""
+    return cached(symbol, period)
+
+def chart(historical_data, symbol, chart_type="line"):
+    """Convenience wrapper so you can call chart() directly."""
+    return market_data.chart(historical_data, symbol, chart_type)
+
+def mini_indices():
+    """Return a small set of example indices with current prices."""
+    indices = {}
+    for symbol in ["^DJI", "^IXIC", "^GSPC"]:  # Dow, Nasdaq, S&P 500
+        data = get_cached_data(symbol, "5d")
+        if data:
+            indices[symbol] = {
+                "price": data["current_price"],
+                "change": data["change"],
+                "change_percent": data["change_percent"],
+            }
+    return indices
