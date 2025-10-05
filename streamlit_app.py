@@ -19,7 +19,7 @@ from app.notifications import (
 )
 from app.utils import uid, format_money, seed_price_path
 from app.analytics import diversification_score
-
+from app.banking import ensure_demo_users, send_money
 # Page configuration
 st.set_page_config(
     page_title="Break Bread",
