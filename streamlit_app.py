@@ -76,11 +76,54 @@ def main():
 
     # Authentication
     if not st.session_state.auth_user:
-        show_login()
-        return
+       def show_login():
+    st.subheader("Login")
+
+    # Create two columns first
+    col1, col2 = st.columns(2)
+
+    with col1:
+        username = st.text_input("Username", key="login_username")
+
+    with col2:
+        password = st.text_input("Password", type="password", key="login_password")
+
+    if st.button("Login", key="login_button"):
+        if username and password:
+            success, msg = fake_login(username, password)
+            if success:
+                st.session_state["logged_in_user"] = username
+                st.success(msg)
+                st.experimental_rerun()
+            else:
+                st.error(msg)
+        else:
+            st.warning("Please enter both username and password.")
 
     # Main app for authenticated users
-    show_main_app()
+    def show_login():
+    st.subheader("Login")
+
+    # Create two columns first
+    col1, col2 = st.columns(2)
+
+    with col1:
+        username = st.text_input("Username", key="login_username")
+
+    with col2:
+        password = st.text_input("Password", type="password", key="login_password")
+
+    if st.button("Login", key="login_button"):
+        if username and password:
+            success, msg = fake_login(username, password)
+            if success:
+                st.session_state["logged_in_user"] = username
+                st.success(msg)
+                st.experimental_rerun()
+            else:
+                st.error(msg)
+        else:
+            st.warning("Please enter both username and password.")
 
 
 def show_login():
@@ -592,7 +635,29 @@ def show_portfolio(user):
                 st.write(f"❌ {sym} - Data unavailable")
     else:
         st.info("Watchlist is empty. Add symbols from the Markets tab or use the 'Add Starter Watchlist' button above!")
+def show_login():
+    st.subheader("Login")
 
+    # Create two columns first
+    col1, col2 = st.columns(2)
+
+    with col1:
+        username = st.text_input("Username", key="login_username")
+
+    with col2:
+        password = st.text_input("Password", type="password", key="login_password")
+
+    if st.button("Login", key="login_button"):
+        if username and password:
+            success, msg = fake_login(username, password)
+            if success:
+                st.session_state["logged_in_user"] = username
+                st.success(msg)
+                st.experimental_rerun()
+            else:
+                st.error(msg)
+        else:
+            st.warning("Please enter both username and password.")
 
 def show_settings(user):
     st.header("Settings")
