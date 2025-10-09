@@ -80,15 +80,17 @@ def main():
     show_main_app()
 
 
-from app.security import fake_login
+from app.security import fake_login, logout
+import streamlit as st
 
 def show_login():
     st.subheader("Login")
-    app_id = st.text_input("Username")
+    username = st.text_input("Username")
     password = st.text_input("Password", type="password")
     if st.button("Login"):
-        success, msg = fake_login(app_id, password)   # 👈 pass both
+        success, msg = fake_login(username, password)   # 👈 pass both
         if success:
+            st.session_state["logged_in_user"] = username
             st.success(msg)
         else:
             st.error(msg)
