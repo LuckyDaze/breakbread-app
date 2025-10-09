@@ -313,6 +313,52 @@ def show_signup():
             else:
                 st.error(msg)
 
+import streamlit as st
+from app.security import fake_login, logout
+from app.banking import register_user
+
+# --- your helper functions ---
+def show_login():
+    st.subheader("Login")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    if st.button("Login"):
+        success, msg = fake_login(username, password)
+        if success:
+            st.session_state["logged_in_user"] = username
+            st.success(msg)
+            st.experimental_rerun()
+        else:
+            st.error(msg)
+
+def show_signup():
+    st.subheader("Sign Up")
+    with st.form("signup_form"):
+        username = st.text_input("Choose a username")
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Register")
+        if submitted:
+            success, msg = register_user(username, email, password)
+            if success:
+                st.success(msg)
+            else:
+                st.error(msg)
+
+# --- main entry point ---
+def main():
+    st.sidebar.title("Navigation")
+    choice = st.sidebar.radio("Go to", ["Login", "Sign Up"])
+
+    if choice == "Login":
+        show_login()
+    elif choice == "Sign Up":
+        show_signup()
+
+# --- run the app ---
+if __name__ == "__main__":
+    main()
+
 
 def show_banking(user):
     st.header("Banking")
