@@ -77,51 +77,71 @@ def show_login():
         # Step 1: Username / Password
         with col1:
             st.subheader("Login")
-            username = st.text_input("Username (App ID)", key="login_username")
-            password = st.text_input("Password", type="password", key="login_password")
+            username = st.text_input("Username (App ID)", key="login_username", placeholder="janedoe or johndoe")
+            password = st.text_input("Password", type="password", key="login_password", value="demo123")
+            
             if st.button("Login", type="primary", key="login_btn"):
-                result = fake_login(username, password)  # step 1
-                status = result.get("status")
-                if status == "SUCCESS":
-                    st.session_state.auth_user = result["user_id"]
-                    user = get_user(result["user_id"])
-                    if user and not user.get("watchlist") and len(user.get("portfolio", {})) <= 1:
-                        user["watchlist"] = ["AAPL", "NVDA", "BTC-USD", "ETH-USD"]
-                        add_notification("🎯 Starter watchlist added! Check out popular stocks & crypto.")
-                    toast_success("Login successful!")
-                    st.rerun()
-                elif status == "2FA_REQUIRED":
-                    st.info("2FA required. Enter any 6-digit code on the right (demo).")
+                if not username or not password:
+                    st.error("Please enter both username and password")
                 else:
-                    st.error(result.get("message", "Login failed"))
+                    try:
+                        result = fake_login(username, password)
+                    except Exception as e:
+                        st.error(f"Login error: {str(e)}")
+                        return
+                    
+                    if isinstance(result, dict):
+                        status = result.get("status")
+                        if status == "SUCCESS":
+                            st.session_state.auth_user = result["user_id"]
+                            user = get_user(result["user_id"])
+                            if user and not user.get("watchlist") and len(user.get("portfolio", {})) <= 1:
+                                user["watchlist"] = ["AAPL", "NVDA", "BTC-USD", "ETH-USD"]
+                                add_notification("🎯 Starter watchlist added! Check out popular stocks & crypto.")
+                            toast_success("Login successful!")
+                            st.rerun()
+                        elif status == "2FA_REQUIRED":
+                            st.info("2FA required. Enter any 6-digit code on the right (demo).")
+                        else:
+                            st.error(result.get("message", "Login failed"))
+                    else:
+                        st.error("Unexpected login response")
 
         # Step 2: 2FA (demo accepts any 6 digits while a 2FA is pending)
         with col2:
             st.subheader("Enter 2FA Code")
             code = st.text_input("6-digit code", placeholder="123456", key="login_2fa_code_input_tab")
+            
             if st.button("Verify Code", key="verify_2fa_btn_tab"):
-                # Accept both demo call styles: fake_login(None, code) or fake_login(code)
-                try:
-                    verify = fake_login(None, code)
-                except TypeError:
-                    verify = fake_login(code)
-
-                if isinstance(verify, dict) and verify.get("status") == "SUCCESS":
-                    st.session_state.auth_user = verify["user_id"]
-                    user = get_user(verify["user_id"])
-                    if user and not user.get("watchlist") and len(user.get("portfolio", {})) <= 1:
-                        user["watchlist"] = ["AAPL", "NVDA", "BTC-USD", "ETH-USD"]
-                        add_notification("🎯 Starter watchlist added! Check out popular stocks & crypto.")
-                    toast_success("Login successful!")
-                    st.rerun()
+                if not code or len(code) != 6 or not code.isdigit():
+                    st.error("Please enter a valid 6-digit code")
                 else:
-                    msg = (verify.get("message") if isinstance(verify, dict) else "Invalid code")
-                    st.error(msg)
+                    try:
+                        # Try different signature patterns
+                        verify = fake_login(code)  # Most common pattern
+                    except TypeError:
+                        try:
+                            verify = fake_login(None, code)  # Alternative pattern
+                        except Exception as e:
+                            st.error(f"Verification error: {str(e)}")
+                            return
+
+                    if isinstance(verify, dict) and verify.get("status") == "SUCCESS":
+                        st.session_state.auth_user = verify["user_id"]
+                        user = get_user(verify["user_id"])
+                        if user and not user.get("watchlist") and len(user.get("portfolio", {})) <= 1:
+                            user["watchlist"] = ["AAPL", "NVDA", "BTC-USD", "ETH-USD"]
+                            add_notification("🎯 Starter watchlist added! Check out popular stocks & crypto.")
+                        toast_success("Login successful!")
+                        st.rerun()
+                    else:
+                        msg = verify.get("message", "Invalid code") if isinstance(verify, dict) else "Invalid code"
+                        st.error(msg)
 
     # ---------- SIGN-UP TAB ----------
     with tab_signup:
         st.subheader("Create your account (Demo)")
-        with st.form("signup_form", clear_on_submit=False):
+        with st.form("signup_form", clear_on_submit=True):
             st.markdown("**Account**")
             app_id = st.text_input("Username (App ID)", placeholder="yourhandle", key="su_appid")
             email = st.text_input("Email", placeholder="you@example.com", key="su_email")
@@ -131,15 +151,15 @@ def show_login():
             st.markdown("**Personal Information**")
             full_name = st.text_input("Full Name", key="su_fullname")
             phone = st.text_input("Phone", key="su_phone")
-            dob = st.date_input("Date of Birth", key="su_dob")
+            dob = st.date_input("Date of Birth", key="su_dob", max_value=datetime.now().date())
             address = st.text_input("Address", key="su_address")
             ssn_last4 = st.text_input("SSN (last 4) — demo only", max_chars=4, key="su_ssn4")
 
             st.markdown("---")
             st.markdown("**Banking Information** (demo only — do not use real numbers)")
-            bank_account = st.text_input("Bank Account Number", key="su_bank_acct")
-            bank_routing = st.text_input("Routing Number", key="su_bank_routing")
-            initial_deposit = st.number_input("Initial Deposit ($)", min_value=0.0, value=0.0, step=50.0, key="su_init_dep")
+            bank_account = st.text_input("Bank Account Number", key="su_bank_acct", value="123456789")
+            bank_routing = st.text_input("Routing Number", key="su_bank_routing", value="021000021")
+            initial_deposit = st.number_input("Initial Deposit ($)", min_value=0.0, value=100.0, step=50.0, key="su_init_dep")
 
             agreed = st.checkbox("I understand this is a demo and not a real bank.", value=True, key="su_agree")
             submitted = st.form_submit_button("Create Account", type="primary", key="su_submit")
@@ -147,23 +167,37 @@ def show_login():
             if submitted:
                 if not agreed:
                     st.warning("Please acknowledge this is a demo.")
+                elif not app_id or not email or not password:
+                    st.warning("Please fill in all required account fields.")
                 else:
                     personal = {
-                        "full_name": full_name, "phone": phone, "dob": str(dob),
-                        "address": address, "ssn_last4": ssn_last4,
+                        "full_name": full_name, 
+                        "phone": phone, 
+                        "dob": str(dob),
+                        "address": address, 
+                        "ssn_last4": ssn_last4,
                     }
-                    banking = {"account_number": bank_account, "routing_number": bank_routing}
+                    banking = {
+                        "account_number": bank_account, 
+                        "routing_number": bank_routing
+                    }
+                    
                     ok, msg, user_id = register_user(
-                        app_id=app_id, email=email, password=password,
-                        personal=personal, banking=banking, initial_deposit=initial_deposit,
+                        app_id=app_id, 
+                        email=email, 
+                        password=password,
+                        personal=personal, 
+                        banking=banking, 
+                        initial_deposit=initial_deposit,
                     )
+                    
                     if ok:
                         toast_success(msg)
-                        st.info("You can log in with your new credentials now.")
+                        add_notification(f"🎉 Welcome {app_id}! Account created with ${initial_deposit:.2f} initial deposit.")
+                        st.success("Account created successfully! You can now log in with your credentials.")
+                        st.balloons()  # Celebration!
                     else:
                         st.error(msg)
-
-
 # ----------------------------
 # Main app shell
 # ----------------------------
