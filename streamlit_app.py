@@ -990,11 +990,7 @@ def main():
     # Header
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-       st.markdown(
-    "<div style='text-align: center;'>
-        <img src='assets/BB_logo.png' width='200'>
-    </div>",
-    unsafe_allow_html=True
+      st.markdown("<div style='text-align: center;'><img src='assets/BB_logo.png' width='200'></div>", unsafe_allow_html=True)
 )
         st.markdown("<h3 style='text-align: center; font-size:108px;'><b><i>Break Bread. Build Wealth.</i></b></h3>", unsafe_allow_html=True)
 
