@@ -990,8 +990,8 @@ def main():
     # Header
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("<h1 style='text-align:center'>🍞 Break Bread</h1>", unsafe_allow_html=True)
-        st.markdown("<h3 style='text-align: center; font-size:36px;'><b><i>Break Bread. Build Wealth.</i></b></h3>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align:center'>assets/BB_logo.png</h1>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; font-size:108px;'><b><i>Break Bread. Build Wealth.</i></b></h3>", unsafe_allow_html=True)
 
     # Auth gate
     if not st.session_state.get("auth_user"):
