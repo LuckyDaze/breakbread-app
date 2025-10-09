@@ -1,4 +1,52 @@
-# app/banking.py
+
+import streamlit as st
+from app.utils import uid
+from datetime import datetime
+
+def register_user(app_id, email, password, personal=None, banking=None, initial_deposit=0.0):
+    """Register a new user with enhanced profile data"""
+    # Check if user already exists
+    if any(user.get('app_id') == app_id for user in st.session_state.users.values()):
+        return False, "Username already exists", None
+    
+    if any(user.get('email') == email for user in st.session_state.users.values()):
+        return False, "Email already registered", None
+    
+    # Create new user
+    user_id = uid()
+    new_user = {
+        "user_id": user_id,
+        "app_id": app_id,
+        "email": email,
+        "password_hash": hash_password(password),
+        "balance": float(initial_deposit),
+        "watchlist": [],
+        "portfolio": {},
+        "personal_info": personal or {},
+        "banking_info": banking or {},
+        "settings": {
+            "dark_mode": False,
+            "price_alerts": {},
+            "notification_preferences": {"email": True, "push": True}
+        },
+        "created_at": datetime.now(),
+        "last_login": datetime.now(),
+        "verified": False  # KYC pending in real app
+    }
+    
+    # Add to users database
+    st.session_state.users[user_id] = new_user
+    
+    # Add welcome notification
+    from app.notifications import add_notification
+    add_notification(f"👋 Welcome to Break Bread, {app_id}!")
+    
+    return True, f"Account created successfully for {app_id}", user_id
+
+def hash_password(password):
+    """Simple password hashing for demo (use proper hashing in production)"""
+    import hashlib
+    return hashlib.sha256(f"breakbread_{password}_salt".encode()).hexdigest()
 
 from datetime import datetime
 import json, os, uuid
