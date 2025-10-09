@@ -61,7 +61,7 @@ def main():
     # Header with logo fallback
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        logo_path = "assets/BB_logo.png"
+        logo_path = "assets/breakbread-logo.png"
         if os.path.exists(logo_path):
             st.image(logo_path, use_container_width=True)
         else:
