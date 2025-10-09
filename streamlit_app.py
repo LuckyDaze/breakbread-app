@@ -80,23 +80,18 @@ def main():
     show_main_app()
 
 
+from app.security import fake_login
+
 def show_login():
-    st.header("Welcome to Break Bread")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.subheader("Login")
-        app_id = st.text_input("App ID", placeholder="janedoe or johndoe")
-        password = st.text_input("Password", type="password", value="demo123")
-
-        if st.button("Login", type="primary"):
-            result = fake_login(app_id)
-            if result["status"] == "2FA_REQUIRED":
-                st.info("2FA code sent (simulated). Enter any 6-digit code on the right.")
-            else:
-                st.error(result.get("message", "Login failed"))
-
+    st.subheader("Login")
+    app_id = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    if st.button("Login"):
+        success, msg = fake_login(app_id, password)   # 👈 pass both
+        if success:
+            st.success(msg)
+        else:
+            st.error(msg)
     with col2:
         st.subheader("Enter 2FA Code")
         code = st.text_input("6-digit code", placeholder="123456")
