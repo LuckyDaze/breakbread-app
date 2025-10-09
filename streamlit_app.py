@@ -68,6 +68,24 @@ def show_login():
     st.header("Welcome to Break Bread")
 
     tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
+    with tab_login:
+        username = st.text_input("Username", key="login_username")
+        password = st.text_input("Password", type="password", key="login_password")
+        if st.button("Login", key="login_btn"):
+            result = fake_login(username, password)
+            # handle result...
+
+    with tab_signup:
+        new_username = st.text_input("Choose a username", key="signup_username")
+        new_email = st.text_input("Email", key="signup_email")
+        new_password = st.text_input("Password", type="password", key="signup_password")
+        if st.button("Sign Up", key="signup_btn"):
+            success, msg = register_user(new_username, new_email, new_password)
+            if success:
+                st.success(msg)
+            else:
+                st.error(msg)
+
 
     # ---------- LOGIN TAB ----------
     with tab_login:
