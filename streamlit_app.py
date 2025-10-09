@@ -65,48 +65,48 @@ def _clean_symbol(text: str) -> str:
 # Authentication
 # ----------------------------
 def show_login():
-    st.subheader("Login")
+    st.header("Welcome to Break Bread")
 
-    username = st.text_input("Username", key="login_username")
-    password = st.text_input("Password", type="password", key="login_password")
+    tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
 
-    result = None   # 👈 initialize so it's always defined
+    # -----------------
+    # LOGIN TAB
+    # -----------------
+    with tab_login:
+        col1, col2 = st.columns(2, gap="large")
 
-    if st.button("Login", key="login_btn"):
-        result = fake_login(username, password)
+        # Step 1: username/password
+        with col1:
+            st.subheader("Login")
+            username = st.text_input("Username (App ID)", key="login_username")
+            password = st.text_input("Password", type="password", key="login_password")
+            if st.button("Login", type="primary", key="login_btn"):
+                result = fake_login(username, password)  # step 1
+                status = result.get("status")
+                if status == "SUCCESS":
+                    st.session_state.auth_user = result["user_id"]
+                    user = get_user(result["user_id"])
+                    if user and not user.get("watchlist") and len(user.get("portfolio", {})) <= 1:
+                        user["watchlist"] = ["AAPL", "NVDA", "BTC-USD", "ETH-USD"]
+                        add_notification("🎯 Starter watchlist added! Check out popular stocks & crypto.")
+                    toast_success("Login successful!")
+                    st.rerun()
+                elif status == "2FA_REQUIRED":
+                    st.info("2FA required. Enter any 6-digit code on the right (demo).")
+                else:
+                    st.error(result.get("message", "Login failed"))
 
-    if "_pending_2fa_user" in st.session_state:
-        code = st.text_input("6-digit code", placeholder="123456", key="login_2fa_code")
-        if st.button("Verify Code", key="login_verify_2fa_btn"):
-            result = security_manager._verify_2fa(code)
-
-    # Now it's safe to check result
-    if result and isinstance(result, dict):
-        status = result.get("status")
-        if status == "SUCCESS":
-            st.session_state.auth_user = username
-            st.success("Login successful!")
-        elif status == "2FA_REQUIRED":
-            st.info(result.get("message"))
-        else:
-            st.error(result.get("message"))
-        # Step 2: 2FA (single, unique keys)
+        # Step 2: 2FA code (right column)
         with col2:
             st.subheader("Enter 2FA Code")
-            code = st.text_input("6-digit code", placeholder="123456", key="login_2fa_code")
-        if st.button("Verify Code", key="login_verify_2fa_btn"):
-            result = security_manager._verify_2fa(code)   # pass the code, not username
-            if result and isinstance(result, dict):
-                status = result.get("status")
-                # handle SUCCESS / FAILED here
-                # Most implementations: fake_login(code). Fallback to (None, code) if needed.
+            code = st.text_input("6-digit code", placeholder="123456", key="login_2fa_code_input")
+            if st.button("Verify Code", key="verify_2fa_btn"):
+                # Accept both call styles for step 2
                 try:
-                    verify = fake_login(code)
-                except TypeError:
                     verify = fake_login(None, code)
+                except TypeError:
+                    verify = fake_login(code)
 
-                return {"status": "FAILED", "message": "Unexpected login state"}
-                
                 if isinstance(verify, dict) and verify.get("status") == "SUCCESS":
                     st.session_state.auth_user = verify["user_id"]
                     user = get_user(verify["user_id"])
@@ -116,7 +116,57 @@ def show_login():
                     toast_success("Login successful!")
                     st.rerun()
                 else:
-                    st.error((verify or {}).get("message", "Invalid code"))
+                    # tuple or dict failure -> show a generic error
+                    msg = (verify.get("message") if isinstance(verify, dict) else "Invalid code")
+                    st.error(msg)
+
+    # -----------------
+    # SIGN-UP TAB
+    # -----------------
+    with tab_signup:
+        st.subheader("Create your account (Demo)")
+        with st.form("signup_form", clear_on_submit=False):
+            st.markdown("**Account**")
+            app_id = st.text_input("Username (App ID)", placeholder="yourhandle", key="su_appid")
+            email = st.text_input("Email", placeholder="you@example.com", key="su_email")
+            password = st.text_input("Password", type="password", key="su_password")
+
+            st.markdown("---")
+            st.markdown("**Personal Information**")
+            full_name = st.text_input("Full Name", key="su_fullname")
+            phone = st.text_input("Phone", key="su_phone")
+            dob = st.date_input("Date of Birth", key="su_dob")
+            address = st.text_input("Address", key="su_address")
+            ssn_last4 = st.text_input("SSN (last 4) — demo only", max_chars=4, key="su_ssn4")
+
+            st.markdown("---")
+            st.markdown("**Banking Information** (demo only — do not use real numbers)")
+            bank_account = st.text_input("Bank Account Number", key="su_bank_acct")
+            bank_routing = st.text_input("Routing Number", key="su_bank_routing")
+            initial_deposit = st.number_input("Initial Deposit ($)", min_value=0.0, value=0.0, step=50.0, key="su_init_dep")
+
+            agreed = st.checkbox("I understand this is a demo and not a real bank.", value=True, key="su_agree")
+            submitted = st.form_submit_button("Create Account", type="primary", key="su_submit")
+
+            if submitted:
+                if not agreed:
+                    st.warning("Please acknowledge this is a demo.")
+                else:
+                    personal = {
+                        "full_name": full_name, "phone": phone, "dob": str(dob),
+                        "address": address, "ssn_last4": ssn_last4,
+                    }
+                    banking = {"account_number": bank_account, "routing_number": bank_routing}
+                    ok, msg, user_id = register_user(
+                        app_id=app_id, email=email, password=password,
+                        personal=personal, banking=banking, initial_deposit=initial_deposit,
+                    )
+                    if ok:
+                        toast_success(msg)
+                        st.info("You can log in with your new credentials now.")
+                    else:
+                        st.error(msg)
+
 
     # --- SIGN UP ---
     with tab_signup:
