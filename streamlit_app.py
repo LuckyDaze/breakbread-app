@@ -75,8 +75,8 @@ def main():
         )
 
     # Authentication
-    if not st.session_state.auth_user:
-       def show_login():
+            if not st.session_state.auth_user:
+          def show_login():
     st.subheader("Login")
 
     # Create two columns first
@@ -635,7 +635,7 @@ def show_portfolio(user):
                 st.write(f"❌ {sym} - Data unavailable")
     else:
         st.info("Watchlist is empty. Add symbols from the Markets tab or use the 'Add Starter Watchlist' button above!")
-def show_login():
+    def show_login():
     st.subheader("Login")
 
     # Create two columns first
