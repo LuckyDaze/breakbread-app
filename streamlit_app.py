@@ -162,7 +162,7 @@ def show_login():
 
     with col2:
         st.subheader("Enter 2FA Code")
-        code = st.text_input("6-digit code", placeholder="123456", key="login_2fa_code_input")
+       code = st.text_input("6-digit code", placeholder="123456", key="login_2fa_code")
         if st.button("Verify Code", key="verify_2fa_btn"):
             # Common pattern: fake_login(None, code). Try gracefully.
             try:
