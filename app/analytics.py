@@ -1,4 +1,5 @@
 from app.banking import TRANSACTIONS
+from app.market_data import get_cached_data
 
 def track_event(event_name, metadata=None):
     """Return a simple event record (could be extended to log)."""
