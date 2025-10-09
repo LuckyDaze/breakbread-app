@@ -84,23 +84,22 @@ def main():
 
 
 def show_login():
-    st.header("Welcome to Break Bread")
+    st.subheader("Login")
 
-    col1, col2 = st.columns(2)
+    username = st.text_input("Username", key="login_username")
+    password = st.text_input("Password", type="password", key="login_password")
 
-    # Step 1: username / password -> request 2FA
-    with col1:
-        st.subheader("Login")
-        app_id = st.text_input("App ID", placeholder="janedoe or johndoe", key="login_app_id")
-        password = st.text_input("Password", type="password", value="demo123", key="login_pwd")
-
-        if st.button("Login", type="primary", key="login_btn"):
-            result = fake_login(app_id)
-            if result["status"] == "2FA_REQUIRED":
-                st.info("2FA code sent (simulated). Enter any 6-digit code on the right.")
+    if st.button("Login", key="login_button"):
+        if username and password:
+            success, msg = fake_login(username, password)   # 👈 pass BOTH
+            if success:
+                st.session_state["logged_in_user"] = username
+                st.success(msg)
+                st.experimental_rerun()
             else:
-                st.error(result.get("message", "Login failed"))
-
+                st.error(msg)
+        else:
+            st.warning("Please enter both username and password.")
     # Step 2: enter 2FA code
     with col2:
         st.subheader("Enter 2FA Code")
