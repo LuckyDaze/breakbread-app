@@ -1,15 +1,7 @@
 import os
 from datetime import datetime
 from app.security import fake_login, logout
-from app.banking import (
-    ensure_demo_users,
-    send_money,
-    request_money,
-    get_user,
-    find_user,
-    simulate_paycheck,
-    register_user,
-)
+from app.banking import ensure_demo_users, send_money, request_money, get_user, find_user, simulate_paycheck, register_user
 from app.market_data import get_cached_data, chart, mini_indices
 from app.investing import place_order, portfolio_value, unrealized_gains, allocation_breakdown
 from app.analytics import diversification_score
