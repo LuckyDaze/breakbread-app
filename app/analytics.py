@@ -14,7 +14,11 @@ def user_activity_summary(user_id):
         "total_sent": total_sent,
         "total_received": total_received
     }
-from app.analytics import user_activity_summary
-summary = user_activity_summary("u1")
-st.write("Transactions:", summary["transactions"])
-st.write("Total Sent:", summary["total_sent"])
+
+def diversification_score(portfolio):
+    """Very simple diversification metric: 1 - sum of squared weights."""
+    total = sum(portfolio.values())
+    if total == 0:
+        return 0.0
+    weights = [v / total for v in portfolio.values()]
+    return 1 - sum(w ** 2 for w in weights)
