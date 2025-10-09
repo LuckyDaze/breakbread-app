@@ -1,37 +1,34 @@
 import streamlit as st
-from app.common import get_user, find_user  # Changed import
+from app.common import get_user, find_user
 from app.utils import uid, format_money
 
 def ensure_demo_users():
     """Ensure demo users exist in session state."""
-    if "users" not in st.session_state:
-        st.session_state.users = {}
-    
-    demo_users = [
-        {
-            "user_id": "user_1",
-            "app_id": "janedoe", 
-            "email": "jane@example.com",
-            "password": "demo123",
-            "balance": 5000.0,
-            "portfolio": {},
-            "watchlist": [],
-            "settings": {"dark_mode": False, "price_alerts": {}}
-        },
-        {
-            "user_id": "user_2", 
-            "app_id": "johndoe",
-            "email": "john@example.com", 
-            "password": "demo123",
-            "balance": 3000.0,
-            "portfolio": {},
-            "watchlist": [],
-            "settings": {"dark_mode": False, "price_alerts": {}}
-        }
-    ]
-    
-    for user in demo_users:
-        if user["app_id"] not in [u["app_id"] for u in st.session_state.users.values()]:
+    if not st.session_state.users:
+        demo_users = [
+            {
+                "user_id": "user_1",
+                "app_id": "janedoe", 
+                "email": "jane@example.com",
+                "password": "demo123",
+                "balance": 5000.0,
+                "portfolio": {},
+                "watchlist": [],
+                "settings": {"dark_mode": False, "price_alerts": {}}
+            },
+            {
+                "user_id": "user_2", 
+                "app_id": "johndoe",
+                "email": "john@example.com", 
+                "password": "demo123",
+                "balance": 3000.0,
+                "portfolio": {},
+                "watchlist": [],
+                "settings": {"dark_mode": False, "price_alerts": {}}
+            }
+        ]
+        
+        for user in demo_users:
             st.session_state.users[user["user_id"]] = user
 
 def send_money(sender_id, recipient_identifier, amount, note=""):
@@ -67,4 +64,52 @@ def send_money(sender_id, recipient_identifier, amount, note=""):
     
     return True, "Payment sent successfully"
 
-# ... rest of your banking functions
+def request_money(requestor_id, recipient_identifier, amount, note=""):
+    """Request money from another user."""
+    recipient = find_user(recipient_identifier)
+    if not recipient:
+        return False, "Recipient not found"
+    
+    request_data = {
+        "request_id": uid(),
+        "requestor_id": requestor_id,
+        "recipient_id": recipient["user_id"],
+        "amount": amount,
+        "note": note,
+        "status": "pending",
+        "ts": st.datetime.now()
+    }
+    st.session_state.requests.append(request_data)
+    return True, "Money request sent"
+
+def simulate_paycheck(user_id):
+    """Simulate paycheck deposit."""
+    user = get_user(user_id)
+    if not user:
+        return False, "User not found"
+    
+    user["balance"] += 2000.0
+    return True, "Paycheck deposited"
+
+def register_user(app_id, email, password, personal, banking, initial_deposit):
+    """Register a new user."""
+    # Check if user already exists
+    if find_user(app_id) or find_user(email):
+        return False, "User already exists", None
+    
+    user_id = f"user_{uid()}"
+    new_user = {
+        "user_id": user_id,
+        "app_id": app_id,
+        "email": email,
+        "password": password,
+        "balance": float(initial_deposit),
+        "portfolio": {},
+        "watchlist": [],
+        "settings": {"dark_mode": False, "price_alerts": {}},
+        "personal": personal,
+        "banking": banking
+    }
+    
+    st.session_state.users[user_id] = new_user
+    return True, "Registration successful", user_id
