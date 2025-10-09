@@ -1,5 +1,6 @@
 # app/security.py
 
+# Demo users (for testing only)
 USERS = {
     "johndoe": {"password": "secret123", "locked": False},
     "janedoe": {"password": "pass456", "locked": False},
