@@ -65,31 +65,10 @@ def _clean_symbol(text: str) -> str:
 # Authentication
 # ----------------------------
 def show_login():
-    st.subheader("Welcome")
+    st.header("Welcome to Break Bread")
 
-    # define tabs once
+    # Create both tabs and keep all UI INSIDE these blocks
     tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
-
-    with tab_login:
-        username = st.text_input("Username", key="login_username")
-        password = st.text_input("Password", type="password", key="login_password")
-        if st.button("Login", key="login_btn"):
-            result = fake_login(username, password)
-            # handle result...
-
-    with tab_signup:
-        new_username = st.text_input("Choose a username", key="signup_username")
-        new_email = st.text_input("Email", key="signup_email")
-        new_password = st.text_input("Password", type="password", key="signup_password")
-        if st.button("Sign Up", key="signup_btn"):
-            success, msg = register_user(new_username, new_email, new_password)
-            if success:
-                st.success(msg)
-            else:
-                st.error(msg)
-
-
-
 
     # ---------- LOGIN TAB ----------
     with tab_login:
@@ -116,11 +95,11 @@ def show_login():
                 else:
                     st.error(result.get("message", "Login failed"))
 
-        # Step 2: 2FA
+        # Step 2: 2FA (demo accepts any 6 digits while a 2FA is pending)
         with col2:
             st.subheader("Enter 2FA Code")
-            code = st.text_input("6-digit code", placeholder="123456", key="login_2fa_code_input")
-            if st.button("Verify Code", key="verify_2fa_btn"):
+            code = st.text_input("6-digit code", placeholder="123456", key="login_2fa_code_input_tab")
+            if st.button("Verify Code", key="verify_2fa_btn_tab"):
                 # Accept both demo call styles: fake_login(None, code) or fake_login(code)
                 try:
                     verify = fake_login(None, code)
@@ -177,112 +156,6 @@ def show_login():
                     ok, msg, user_id = register_user(
                         app_id=app_id, email=email, password=password,
                         personal=personal, banking=banking, initial_deposit=initial_deposit,
-                    )
-                    if ok:
-                        toast_success(msg)
-                        st.info("You can log in with your new credentials now.")
-                    else:
-                        st.error(msg)
-
-    # -----------------
-    # SIGN-UP TAB
-    # -----------------
-    with tab_signup:
-        st.subheader("Create your account (Demo)")
-        with st.form("signup_form", clear_on_submit=False):
-            st.markdown("**Account**")
-            app_id = st.text_input("Username (App ID)", placeholder="yourhandle", key="su_appid")
-            email = st.text_input("Email", placeholder="you@example.com", key="su_email")
-            password = st.text_input("Password", type="password", key="su_password")
-
-            st.markdown("---")
-            st.markdown("**Personal Information**")
-            full_name = st.text_input("Full Name", key="su_fullname")
-            phone = st.text_input("Phone", key="su_phone")
-            dob = st.date_input("Date of Birth", key="su_dob")
-            address = st.text_input("Address", key="su_address")
-            ssn_last4 = st.text_input("SSN (last 4) — demo only", max_chars=4, key="su_ssn4")
-
-            st.markdown("---")
-            st.markdown("**Banking Information** (demo only — do not use real numbers)")
-            bank_account = st.text_input("Bank Account Number", key="su_bank_acct")
-            bank_routing = st.text_input("Routing Number", key="su_bank_routing")
-            initial_deposit = st.number_input("Initial Deposit ($)", min_value=0.0, value=0.0, step=50.0, key="su_init_dep")
-
-            agreed = st.checkbox("I understand this is a demo and not a real bank.", value=True, key="su_agree")
-            submitted = st.form_submit_button("Create Account", type="primary", key="su_submit")
-
-            if submitted:
-                if not agreed:
-                    st.warning("Please acknowledge this is a demo.")
-                else:
-                    personal = {
-                        "full_name": full_name, "phone": phone, "dob": str(dob),
-                        "address": address, "ssn_last4": ssn_last4,
-                    }
-                    banking = {"account_number": bank_account, "routing_number": bank_routing}
-                    ok, msg, user_id = register_user(
-                        app_id=app_id, email=email, password=password,
-                        personal=personal, banking=banking, initial_deposit=initial_deposit,
-                    )
-                    if ok:
-                        toast_success(msg)
-                        st.info("You can log in with your new credentials now.")
-                    else:
-                        st.error(msg)
-
-
-    # --- SIGN UP ---
-    with tab_signup:
-        st.subheader("Create your account (Demo)")
-        with st.form("signup_form", clear_on_submit=False):
-            st.markdown("**Account**")
-            app_id = st.text_input("Username (App ID)", placeholder="yourhandle", key="su_appid")
-            email = st.text_input("Email", placeholder="you@example.com", key="su_email")
-            password = st.text_input("Password", type="password", key="su_password")
-
-            st.markdown("---")
-            st.markdown("**Personal Information**")
-            full_name = st.text_input("Full Name", key="su_fullname")
-            phone = st.text_input("Phone", key="su_phone")
-            dob = st.date_input("Date of Birth", key="su_dob")
-            address = st.text_input("Address", key="su_address")
-            ssn_last4 = st.text_input("SSN (last 4) — demo only", max_chars=4, key="su_ssn4")
-
-            st.markdown("---")
-            st.markdown("**Banking Information** (demo only — do not use real numbers)")
-            bank_account = st.text_input("Bank Account Number", key="su_bank_acct")
-            bank_routing = st.text_input("Routing Number", key="su_bank_routing")
-            initial_deposit = st.number_input(
-                "Initial Deposit ($)", min_value=0.0, value=0.0, step=50.0, key="su_init_dep"
-            )
-
-            agreed = st.checkbox(
-                "I understand this is a demo and not a real bank.",
-                value=True,
-                key="su_agree",
-            )
-            submitted = st.form_submit_button("Create Account", type="primary", key="su_submit")
-
-            if submitted:
-                if not agreed:
-                    st.warning("Please acknowledge this is a demo.")
-                else:
-                    personal = {
-                        "full_name": full_name,
-                        "phone": phone,
-                        "dob": str(dob),
-                        "address": address,
-                        "ssn_last4": ssn_last4,
-                    }
-                    banking = {"account_number": bank_account, "routing_number": bank_routing}
-                    ok, msg, user_id = register_user(
-                        app_id=app_id,
-                        email=email,
-                        password=password,
-                        personal=personal,
-                        banking=banking,
-                        initial_deposit=initial_deposit,
                     )
                     if ok:
                         toast_success(msg)
