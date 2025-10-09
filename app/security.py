@@ -29,3 +29,8 @@ def fraud_check(user_id, transaction):
     if amount > 5000:  # arbitrary threshold
         return False, "Transaction flagged as suspicious."
     return True, "Transaction approved."
+
+class SecurityManager:
+    def __init__(self, secret_key=None):
+        self.secret_key = secret_key or st.secrets.get("JWT_SECRET", "breakbread-secret-key-2024")
+        ...
