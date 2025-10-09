@@ -1,52 +1,70 @@
+import streamlit as st
+from app.common import get_user, find_user  # Changed import
+from app.utils import uid, format_money
+
 def ensure_demo_users():
-    """Populate demo users with consistent data structure"""
+    """Ensure demo users exist in session state."""
     if "users" not in st.session_state:
         st.session_state.users = {}
     
-    # Demo users with password_hash field for compatibility
-    demo_users = {
-        "user_1": {
-            "user_id": "user_1", 
+    demo_users = [
+        {
+            "user_id": "user_1",
             "app_id": "janedoe", 
             "email": "jane@example.com",
-            "password_hash": hash_password("demo123"),  # Consistent hashing
-            "balance": 2500.00,
-            "watchlist": ["AAPL", "BTC-USD"],
-            "portfolio": {
-                "AAPL": {"units": 3.0, "avg_cost": 175.50},
-                "BTC-USD": {"units": 0.02, "avg_cost": 42000.00}
-            },
-            "settings": {
-                "dark_mode": True,
-                "price_alerts": {"BTC-USD": 70000},
-                "notification_preferences": {"email": True, "push": True}
-            },
-            "created_at": datetime.now(),
-            "last_login": datetime.now(),
-            "verified": True
+            "password": "demo123",
+            "balance": 5000.0,
+            "portfolio": {},
+            "watchlist": [],
+            "settings": {"dark_mode": False, "price_alerts": {}}
         },
-        "user_2": {
+        {
             "user_id": "user_2", 
-            "app_id": "johndoe", 
-            "email": "john@example.com",
-            "password_hash": hash_password("demo123"),  # Consistent hashing
-            "balance": 1500.00,
-            "watchlist": ["TSLA", "ETH-USD"],
-            "portfolio": {
-                "TSLA": {"units": 2.0, "avg_cost": 220.00}
-            },
-            "settings": {
-                "dark_mode": False,
-                "price_alerts": {},
-                "notification_preferences": {"email": True, "push": False}
-            },
-            "created_at": datetime.now(),
-            "last_login": datetime.now(),
-            "verified": True
+            "app_id": "johndoe",
+            "email": "john@example.com", 
+            "password": "demo123",
+            "balance": 3000.0,
+            "portfolio": {},
+            "watchlist": [],
+            "settings": {"dark_mode": False, "price_alerts": {}}
         }
-    }
+    ]
     
-    # Only add demo users if they don't exist
-    for user_id, user_data in demo_users.items():
-        if user_id not in st.session_state.users:
-            st.session_state.users[user_id] = user_data
+    for user in demo_users:
+        if user["app_id"] not in [u["app_id"] for u in st.session_state.users.values()]:
+            st.session_state.users[user["user_id"]] = user
+
+def send_money(sender_id, recipient_identifier, amount, note=""):
+    """Send money to another user."""
+    recipient = find_user(recipient_identifier)
+    if not recipient:
+        return False, "Recipient not found"
+    
+    sender = get_user(sender_id)
+    if not sender:
+        return False, "Sender not found"
+    
+    if sender["balance"] < amount:
+        return False, "Insufficient funds"
+    
+    # Deduct from sender
+    sender["balance"] -= amount
+    # Add to recipient  
+    recipient["balance"] += amount
+    
+    # Record transaction
+    transaction = {
+        "transaction_id": uid(),
+        "sender_id": sender_id,
+        "recipient_id": recipient["user_id"],
+        "amount": amount,
+        "fee": 0.0,
+        "note": note,
+        "status": "completed",
+        "ts": st.datetime.now()
+    }
+    st.session_state.transactions.append(transaction)
+    
+    return True, "Payment sent successfully"
+
+# ... rest of your banking functions
