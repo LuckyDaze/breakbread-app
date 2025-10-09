@@ -276,6 +276,43 @@ def show_dashboard(user):
     else:
         st.info("No recent activity. Start by sending money or making investments!")
 
+import streamlit as st
+from app.banking import register_user
+
+def show_signup():
+    st.header("Sign Up")
+
+    with st.form("signup_form"):
+        username = st.text_input("Choose a username")
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+
+        # Personal info
+        full_name = st.text_input("Full Name")
+        dob = st.date_input("Date of Birth")
+
+        # Banking info (⚠️ demo only, don’t store real routing numbers in plaintext!)
+        account_number = st.text_input("Bank Account Number")
+        routing_number = st.text_input("Routing Number")
+
+        # Security questions
+        sec_q1 = st.text_input("What is your mother’s maiden name?")
+        sec_q2 = st.text_input("What was the name of your first pet?")
+
+        # Two‑factor (demo: just a code input)
+        twofa_code = st.text_input("Enter 2FA code (demo)", type="password")
+
+        submitted = st.form_submit_button("Register")
+
+        if submitted:
+            # For demo, just call your register_user and ignore extra fields
+            success, msg = register_user(username, email, password)
+            if success:
+                st.success(msg)
+                st.info("Extra info captured (not yet persisted).")
+            else:
+                st.error(msg)
+
 
 def show_banking(user):
     st.header("Banking")
