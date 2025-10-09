@@ -65,40 +65,31 @@ def _clean_symbol(text: str) -> str:
 # Authentication
 # ----------------------------
 def show_login():
-    st.header("Welcome to Break Bread")
+    st.subheader("Login")
 
-    tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
+    username = st.text_input("Username", key="login_username")
+    password = st.text_input("Password", type="password", key="login_password")
 
-    # --- LOGIN ---
-    with tab_login:
-        col1, col2 = st.columns(2)
+    result = None   # 👈 initialize so it's always defined
 
-        # Step 1: username/password
-        with col1:
-            st.subheader("Login")
-            username = st.text_input("Username (App ID)", key="auth_username")
-            password = st.text_input("Password", type="password", key="auth_password")
-            if st.button("Login", type="primary", key="auth_login_btn"):
-                result = fake_login(username, password)  # step 1
-                # ✅ replacement at line ~83
-            if result and isinstance(result, dict):
-                status = result.get("status")
-            else:
-                st.error("Login function returned an unexpected value")
-                return
-                if status == "SUCCESS":
-                    st.session_state.auth_user = result["user_id"]
-                    user = get_user(result["user_id"])
-                    if user and not user.get("watchlist") and len(user.get("portfolio", {})) <= 1:
-                        user["watchlist"] = ["AAPL", "NVDA", "BTC-USD", "ETH-USD"]
-                        add_notification("🎯 Starter watchlist added! Check out popular stocks & crypto.")
-                    toast_success("Login successful!")
-                    st.rerun()
-                elif status == "2FA_REQUIRED":
-                    st.info("2FA required. Enter any 6-digit code on the right (demo).")
-                else:
-                    st.error(result.get("message", "Login failed"))
+    if st.button("Login", key="login_btn"):
+        result = fake_login(username, password)
 
+    if "_pending_2fa_user" in st.session_state:
+        code = st.text_input("6-digit code", placeholder="123456", key="login_2fa_code")
+        if st.button("Verify Code", key="login_verify_2fa_btn"):
+            result = security_manager._verify_2fa(code)
+
+    # Now it's safe to check result
+    if result and isinstance(result, dict):
+        status = result.get("status")
+        if status == "SUCCESS":
+            st.session_state.auth_user = username
+            st.success("Login successful!")
+        elif status == "2FA_REQUIRED":
+            st.info(result.get("message"))
+        else:
+            st.error(result.get("message"))
         # Step 2: 2FA (single, unique keys)
         with col2:
             st.subheader("Enter 2FA Code")
