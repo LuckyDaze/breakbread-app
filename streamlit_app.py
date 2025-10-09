@@ -1002,3 +1002,31 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+from market_data import *
+
+# Quick market overview
+st.header("Market Overview")
+overview = get_market_overview()
+
+for index in overview['indices']:
+    st.metric(index['name'], f"${index['price']:,.2f}", f"{index['change_percent']:+.2f}%")
+
+# Historical charts
+st.header("Historical Charts")
+
+# Bitcoin 7-day chart
+btc_data = get_bitcoin_data(days=7)
+if btc_data:
+    fig = create_price_chart(btc_data['historical'], "Bitcoin (7 Days)")
+    st.plotly_chart(fig, use_container_width=True)
+
+# S&P 500 1-month chart
+sp500_data = get_stock_data("^GSPC", "1mo")
+if sp500_data:
+    fig = create_performance_chart(sp500_data['historical'], "S&P 500 Performance")
+    st.plotly_chart(fig, use_container_width=True)
+
+# Treasury yields
+treasury_data = get_treasury_yields()
+st.write("Latest Treasury Yields:", treasury_data)
