@@ -6,11 +6,7 @@ import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 import yfinance as yf
-from data_providers.yahoo import get_stock_data, get_major_indices
-from data_providers.treasury import get_treasury_yields
-from data_providers.crypto import get_crypto_prices
-from data_providers.metals import get_metals_prices
-from data_providers.alternative import get_startup_investments, get_royalty_investments, get_business_listings
+
 # ----------------------------
 # Page configuration
 # ----------------------------
@@ -900,197 +896,109 @@ def show_portfolio(user):
         for sym, position in user["portfolio"].items():
             data = get_cached_data(sym, "1d")
             if data:
-                current_price = data["current
-
-
-def show_markets(user):
-    st.header("📈 Multi-Asset Markets")
-    
-    # Quick asset categories
-    st.subheader("Asset Classes")
-    asset_tabs = st.tabs(["Stocks & ETFs", "Crypto", "Bonds & Treasuries", "Alternative Investments"])
-    
-    with asset_tabs[0]:
-        show_stocks_etfs()
-    
-    with asset_tabs[1]:
-        show_crypto_assets()
-    
-    with asset_tabs[2]:
-        show_bonds_treasuries()
-    
-    with asset_tabs[3]:
-        show_alternative_investments()
-    
-    # Universal research tool
-    st.markdown("---")
-    show_universal_research()
-
-def show_stocks_etfs():
-    st.subheader("📊 Stocks & ETFs")
-    
-    # Major indices
-    st.write("**Major Indices**")
-    indices = get_major_indices()
-    cols = st.columns(len(indices))
-    
-    for i, index in enumerate(indices):
-        with cols[i]:
-            delta_color = "normal"  # Let Streamlit decide based on value
-            st.metric(
-                label=index['name'],
-                value=f"${index['price']:,.2f}",
-                delta=f"{index['change_percent']:+.2f}%",
-                delta_color=delta_color
-            )
-            st.caption(f"Source: {index['source']}")
-
-def show_crypto_assets():
-    st.subheader("₿ Cryptocurrencies")
-    
-    crypto_data = get_crypto_prices()
-    cols = st.columns(4)
-    
-    for i, crypto in enumerate(crypto_data):
-        with cols[i]:
-            st.metric(
-                label=crypto['symbol'],
-                value=f"${crypto['price']:,.2f}",
-                delta=f"{crypto['change_percent']:+.2f}%"
-            )
-            st.caption(f"Source: {crypto['source']}")
-
-def show_bonds_treasuries():
-    st.subheader("📋 Bonds & Treasuries")
-    
-    treasury_data = get_treasury_yields()
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("1-Month Treasury", f"{treasury_data['1_month']:.2f}%")
-    with col2:
-        st.metric("2-Year Treasury", f"{treasury_data['2_year']:.2f}%")
-    with col3:
-        st.metric("10-Year Treasury", f"{treasury_data['10_year']:.2f}%")
-    
-    st.caption(f"Source: {treasury_data['source']} | Updated: {treasury_data['last_updated']}")
-
-def show_alternative_investments():
-    st.subheader("💎 Alternative Investments")
-    
-    # Precious Metals
-    metals_data = get_metals_prices()
-    st.write("**Precious Metals**")
-    m1, m2, m3 = st.columns(3)
-    with m1:
-        st.metric("Gold (oz)", f"${metals_data['gold']:,.2f}")
-    with m2:
-        st.metric("Silver (oz)", f"${metals_data['silver']:,.2f}")
-    with m3:
-        st.metric("Platinum (oz)", f"${metals_data['platinum']:,.2f}")
-    st.caption(f"Source: {metals_data['source']}")
-    
-    # Startup Investing
-    st.write("**Startup Investing Platforms**")
-    startups = get_startup_investments()
-    for platform in startups['platforms']:
-        with st.expander(f"🎯 {platform['name']}"):
-            st.write(f"Minimum Investment: ${platform['min_investment']:,}")
-            st.write(f"Expected ROI: {platform['avg_roi']}")
-            st.write(f"Liquidity Horizon: {platform['liquidity']}")
-    
-    # Royalty Investing
-    st.write("**Royalty Investments**")
-    royalties = get_royalty_investments()
-    for royalty in royalties['royalties']:
-        with st.expander(f"🎵 {royalty['asset']}"):
-            st.write(f"Current Yield: {royalty['yield']}")
-            st.write(f"Minimum: ${royalty['min_investment']:,}")
-            st.write(f"Term: {royalty['term']}")
-
-def show_universal_research():
-    st.subheader("🔍 Universal Research Tool")
-    
-    col1, col2, col3 = st.columns([2, 1, 1])
-    
-    with col1:
-        symbol = st.text_input(
-            "Research Any Asset", 
-            value="AAPL",
-            placeholder="AAPL, BTC-USD, GC=F, etc.",
-            key="universal_research"
-        )
-    
-    with col2:
-        period = st.selectbox("Period", ["1d", "1wk", "1mo", "3mo", "1y"], key="research_period")
-    
-    with col3:
-        st.write("")  # Spacer
-        if st.button("Research Asset", type="primary"):
-            st.session_state.research_symbol = symbol
-            st.rerun()
-    
-    # Research results
-    if hasattr(st.session_state, 'research_symbol'):
-        symbol = st.session_state.research_symbol
-        data = get_stock_data(symbol, period)
-        
-        if data:
-            # Display metrics
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
-                st.metric("Current Price", f"${data['current_price']:,.2f}")
-            with col2:
-                st.metric("Change", f"${data['change']:+.2f}")
-            with col3:
-                st.metric("Change %", f"{data['change_percent']:+.2f}%")
-            with col4:
-                st.metric("52W Range", f"${data['52w_low']:.0f}-${data['52w_high']:.0f}")
-            
-            st.caption(f"Data Source: {data['source']} | Last Updated: {data['last_updated'].strftime('%Y-%m-%d %H:%M')}")
-            
-            # Simple chart
-            if not data['historical'].empty:
-                st.line_chart(data['historical']['Close'])
+                current_price = data["current_price"]
+                value = position["units"] * current_price
+                cost_basis = position["units"] * position["avg_cost"]
+                unrealized_pl = value - cost_basis
+                unrealized_pct = (unrealized_pl / cost_basis) * 100 if cost_basis > 0 else 0
+                rows.append(
+                    {
+                        "Symbol": sym,
+                        "Units": f"{position['units']:.4f}",
+                        "Avg Cost": format_money(position["avg_cost"]),
+                        "Last Price": format_money(current_price),
+                        "Value": format_money(value),
+                        "Unrealized $": format_money(unrealized_pl),
+                        "Unrealized %": f"{unrealized_pct:.2f}%",
+                    }
+                )
+        if rows:
+            st.dataframe(pd.DataFrame(rows), use_container_width=True)
         else:
-            st.error(f"Could not fetch data for {symbol}. Try a different symbol.")
+            st.info("Position data temporarily unavailable")
+    else:
+        st.info("No positions yet. Buy stocks or crypto to build your portfolio!")
 
-            def show_data_sources():
-    st.header("📚 Data Sources & Usage")
+    st.subheader("Watchlist")
+    if user["watchlist"]:
+        for sym in list(user["watchlist"]):
+            data = get_cached_data(sym, "1d")
+            if data:
+                c1, c2, c3, c4 = st.columns([2, 2, 1, 1])
+                with c1:
+                    st.write(f"**{sym}**")
+                with c2:
+                    st.metric("Price", format_money(data["current_price"]), f"{data['change_percent']:.2f}%")
+                with c3:
+                    if st.button("View", key=f"view_{sym}"):
+                        st.info(f"View {sym} in Markets tab")
+                with c4:
+                    if st.button("Remove", key=f"remove_{sym}"):
+                        user["watchlist"].remove(sym)
+                        add_notification(f"📉 Removed {sym} from watchlist")
+                        st.rerun()
+            else:
+                st.write(f"❌ {sym} - Data unavailable")
+    else:
+        st.info("Watchlist is empty. Add symbols from the Markets tab or use the 'Add Starter Watchlist' button above!")
+
+def show_settings(user):
+    st.header("Settings")
+
+    c1, c2 = st.columns(2)
+
+    with c1:
+        st.subheader("Preferences")
+        dark_mode = st.toggle("Dark Mode", value=user["settings"]["dark_mode"], key="pref_dark_mode")
+        if dark_mode != user["settings"]["dark_mode"]:
+            user["settings"]["dark_mode"] = dark_mode
+            toast_success("Preferences updated")
+            add_notification("⚙️ Preferences updated")
+
+    with c2:
+        st.subheader("Price Alerts")
+        symbol = _clean_symbol(st.text_input("Symbol for Alert", value="BTC-USD", key="alert_symbol"))
+        threshold = st.number_input("Alert Threshold ($)", min_value=0.01, value=50000.0, key="alert_threshold")
+
+        if st.button("Set Alert", key="set_alert_btn"):
+            if symbol:
+                user["settings"]["price_alerts"][symbol] = threshold
+                toast_success(f"Alert set for {symbol} at {format_money(threshold)}")
+                add_notification(f"🔔 Price alert set: {symbol} at {format_money(threshold)}")
+            else:
+                st.warning("Enter a valid symbol before setting an alert.")
+
+        if user["settings"]["price_alerts"]:
+            st.write("Current Alerts:")
+            for alert_symbol, alert_threshold in list(user["settings"]["price_alerts"].items()):
+                c3, c4 = st.columns([3, 1])
+                with c3:
+                    st.write(f"{alert_symbol}: {format_money(alert_threshold)}")
+                with c4:
+                    if st.button("Remove", key=f"remove_alert_{alert_symbol}"):
+                        del user["settings"]["price_alerts"][alert_symbol]
+                        add_notification(f"🔕 Price alert removed: {alert_symbol}")
+                        st.rerun()
+
+# ----------------------------
+# Main App
+# ----------------------------
+def main():
+    # Initialize demo users
+    ensure_demo_users()
     
-    st.markdown("""
-    ### Live Data Sources
-    
-    | Source | Assets Covered | Update Frequency | Limits |
-    |--------|----------------|------------------|---------|
-    | **Yahoo Finance** | Stocks, ETFs, Indices | Real-time (delayed) | None |
-    | **U.S. Treasury** | Treasury Yields | Daily | None |
-    | **CoinGecko** | Cryptocurrencies | Real-time | 50 calls/min |
-    | **Metals-API** | Precious Metals | Real-time | Requires API Key |
-    
-    ### Demo Data Sources
-    
-    | Platform | Assets | Status |
-    |----------|--------|--------|
-    | **AngelList** | Startup Investments | Demo Data |
-    | **StartEngine** | Equity Crowdfunding | Demo Data |
-    | **Royalty Exchange** | Royalty Investments | Demo Data |
-    | **BizBuySell** | Business Listings | Demo Data |
-    
-    ### API Key Setup
-    To enable live metals data, add your Metals-API key to `.streamlit/secrets.toml`:
-    ```toml
-    METALS_API_KEY = "your_key_here"
-    ```
-    """)
-    
-    # Usage statistics
-    st.subheader("📈 Data Usage")
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.metric("Live Data Sources", "4")
+    # Header
+    col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.metric("Demo Data Sources", "4") 
-    with col3:
-        st.metric("Total Assets", "50+")
+        st.markdown("<h1 style='text-align:center'>🍞 Break Bread</h1>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; font-size:36px;'><b><i>Break Bread. Build Wealth.</i></b></h3>", unsafe_allow_html=True)
+
+    # Auth gate
+    if not st.session_state.get("auth_user"):
+        show_login()
+        return
+
+    show_main_app()
+
+if __name__ == "__main__":
+    main()
