@@ -348,7 +348,8 @@ def show_signup():
 # --- main entry point ---
 def main():
     st.sidebar.title("Navigation")
- choice = st.sidebar.radio("Go to", ["Login", "Sign Up"], key="nav_radio")
+ 
+choice = st.sidebar.radio("Go to", ["Login", "Sign Up"], key="nav_radio")
     if choice == "Login":
         show_login()
     elif choice == "Sign Up":
