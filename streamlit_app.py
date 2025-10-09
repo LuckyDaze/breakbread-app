@@ -80,35 +80,36 @@ def show_login():
             username = st.text_input("Username (App ID)", key="login_username", placeholder="janedoe or johndoe")
             password = st.text_input("Password", type="password", key="login_password", value="demo123")
             
-           if st.button("Login", type="primary", key="login_btn"):
-    if not username or not password:
-        st.error("Please enter both username and password")
-    else:
-        try:
-            result = fake_login(username, password)
-            
-            # Debug: Show what we're getting back
-            st.write("Debug - Login Response:", result)
-            
-            if isinstance(result, dict):
-                status = result.get("status")
-                if status == "SUCCESS":
-                    st.session_state.auth_user = result["user_id"]
-                    user = get_user(result["user_id"])
-                    if user and not user.get("watchlist") and len(user.get("portfolio", {})) <= 1:
-                        user["watchlist"] = ["AAPL", "NVDA", "BTC-USD", "ETH-USD"]
-                        add_notification("🎯 Starter watchlist added! Check out popular stocks & crypto.")
-                    toast_success("Login successful!")
-                    st.rerun()
-                elif status == "2FA_REQUIRED":
-                    st.info("2FA required. Enter any 6-digit code on the right (demo).")
+            # FIXED: Proper indentation for the login button
+            if st.button("Login", type="primary", key="login_btn"):
+                if not username or not password:
+                    st.error("Please enter both username and password")
                 else:
-                    st.error(result.get("message", "Login failed"))
-            else:
-                st.error(f"Unexpected response type: {type(result)}")
-                
-        except Exception as e:
-            st.error(f"Login error: {str(e)}")
+                    try:
+                        result = fake_login(username, password)
+                        
+                        # Debug: Show what we're getting back
+                        st.write("Debug - Login Response:", result)
+                        
+                        if isinstance(result, dict):
+                            status = result.get("status")
+                            if status == "SUCCESS":
+                                st.session_state.auth_user = result["user_id"]
+                                user = get_user(result["user_id"])
+                                if user and not user.get("watchlist") and len(user.get("portfolio", {})) <= 1:
+                                    user["watchlist"] = ["AAPL", "NVDA", "BTC-USD", "ETH-USD"]
+                                    add_notification("🎯 Starter watchlist added! Check out popular stocks & crypto.")
+                                toast_success("Login successful!")
+                                st.rerun()
+                            elif status == "2FA_REQUIRED":
+                                st.info("2FA required. Enter any 6-digit code on the right (demo).")
+                            else:
+                                st.error(result.get("message", "Login failed"))
+                        else:
+                            st.error(f"Unexpected response type: {type(result)}")
+                            
+                    except Exception as e:
+                        st.error(f"Login error: {str(e)}")
 
         # Step 2: 2FA (demo accepts any 6 digits while a 2FA is pending)
         with col2:
@@ -201,6 +202,7 @@ def show_login():
                         st.balloons()  # Celebration!
                     else:
                         st.error(msg)
+
 # ----------------------------
 # Main app shell
 # ----------------------------
