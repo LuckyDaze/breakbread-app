@@ -4,15 +4,18 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
-# Import app modules
-from app.banking import ensure_demo_users, send_money, request_money, get_user, find_user, simulate_paycheck
+# App modules (deduped)
+from app.banking import (
+    ensure_demo_users,
+    send_money,
+    request_money,
+    get_user,
+    find_user,
+    simulate_paycheck,
+)
 from app.market_data import get_cached_data, chart, mini_indices
 from app.investing import place_order, portfolio_value, unrealized_gains, allocation_breakdown
 from app.security import fake_login, logout, fraud_check
-from app.notifications import toast_success, toast_info, toast_warn, price_alerts_tick, add_notification, get_notifications
-from app.utils import uid, format_money, seed_price_path
-from app.analytics import user_activity_summary, diversification_score
-import streamlit as st
 from app.notifications import (
     toast_success,
     toast_info,
@@ -22,7 +25,7 @@ from app.notifications import (
     get_notifications,
 )
 from app.utils import uid, format_money, seed_price_path
-from app.analytics import diversification_score
+from app.analytics import diversification_score  # (user_activity_summary removed — unused)
 
 # Page configuration
 st.set_page_config(
@@ -80,41 +83,34 @@ def main():
     show_main_app()
 
 
-import streamlit as st
-from app.security import fake_login
-
 def show_login():
-    st.subheader("Login")
+    st.header("Welcome to Break Bread")
 
-    # Always define variables at the top level of the function
     col1, col2 = st.columns(2)
 
+    # Step 1: username / password -> request 2FA
     with col1:
-        username = st.text_input("Username", key="login_username")
-    with col2:
-        password = st.text_input("Password", type="password", key="login_password")
+        st.subheader("Login")
+        app_id = st.text_input("App ID", placeholder="janedoe or johndoe", key="login_app_id")
+        password = st.text_input("Password", type="password", value="demo123", key="login_pwd")
 
-    if st.button("Login"):
-        if username and password:  # make sure both are filled
-            success, msg = fake_login(username, password)
-            if success:
-                st.session_state["logged_in_user"] = username
-                st.success(msg)
-                st.experimental_rerun()
+        if st.button("Login", type="primary", key="login_btn"):
+            result = fake_login(app_id)
+            if result["status"] == "2FA_REQUIRED":
+                st.info("2FA code sent (simulated). Enter any 6-digit code on the right.")
             else:
-                st.error(msg)
-        else:
-            st.warning("Please enter both username and password.")
-    
+                st.error(result.get("message", "Login failed"))
+
+    # Step 2: enter 2FA code
     with col2:
         st.subheader("Enter 2FA Code")
-        code = st.text_input("6-digit code", placeholder="123456")
-        if st.button("Verify Code"):
+        code = st.text_input("6-digit code", placeholder="123456", key="login_2fa_code_input")
+        if st.button("Verify Code", key="verify_2fa_btn"):
             result = fake_login(None, code)  # second step
             if result["status"] == "SUCCESS":
                 st.session_state.auth_user = result["user_id"]
 
-                # Add starter watchlist for first-time users
+                # Starter watchlist for first-time users
                 user = get_user(result["user_id"])
                 if not user["watchlist"] and len(user["portfolio"]) <= 1:
                     user["watchlist"] = ["AAPL", "NVDA", "BTC-USD", "ETH-USD"]
@@ -143,15 +139,19 @@ def show_main_app():
         for index in indices:
             st.metric(index["name"], format_money(index["price"]), f"{index['chg_pct']:.2f}%")
 
-        # Navigation
+        # Navigation (give it a UNIQUE key)
         st.divider()
-        nav = st.radio("Navigation", ["Dashboard", "Banking", "Markets", "Portfolio", "Settings"])
+        nav = st.radio(
+            "Navigation",
+            ["Dashboard", "Banking", "Markets", "Portfolio", "Settings"],
+            key="app_nav_radio",
+        )
 
-        if st.button("Logout"):
+        if st.button("Logout", key="logout_btn"):
             logout()
             st.rerun()
 
-    # Notifications tray (right sidebar)
+    # Notifications tray
     with st.sidebar:
         st.divider()
         with st.expander("🔔 Notifications", expanded=False):
@@ -165,7 +165,7 @@ def show_main_app():
             else:
                 st.info("No notifications")
 
-    # Main content
+    # Route
     if nav == "Dashboard":
         show_dashboard(user)
     elif nav == "Banking":
@@ -211,7 +211,7 @@ def show_dashboard(user):
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        if st.button("💰 Simulate Paycheck", use_container_width=True):
+        if st.button("💰 Simulate Paycheck", use_container_width=True, key="qa_paycheck"):
             success, message = simulate_paycheck(user["user_id"])
             if success:
                 toast_success("Paycheck deposited!")
@@ -219,7 +219,7 @@ def show_dashboard(user):
                 st.rerun()
 
     with col2:
-        if st.button("📈 Add Starter Watchlist", use_container_width=True):
+        if st.button("📈 Add Starter Watchlist", use_container_width=True, key="qa_watchlist"):
             if not user["watchlist"]:
                 user["watchlist"] = ["AAPL", "NVDA", "BTC-USD", "ETH-USD"]
                 toast_success("Starter watchlist added!")
@@ -229,7 +229,7 @@ def show_dashboard(user):
                 toast_info("You already have a watchlist!")
 
     with col3:
-        if st.button("🔄 Refresh Data", use_container_width=True):
+        if st.button("🔄 Refresh Data", use_container_width=True, key="qa_refresh"):
             st.rerun()
 
     # Portfolio chart (simulated)
@@ -276,90 +276,6 @@ def show_dashboard(user):
     else:
         st.info("No recent activity. Start by sending money or making investments!")
 
-import streamlit as st
-from app.banking import register_user
-
-def show_signup():
-    st.header("Sign Up")
-
-    with st.form("signup_form"):
-        username = st.text_input("Choose a username")
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
-
-        # Personal info
-        full_name = st.text_input("Full Name")
-        dob = st.date_input("Date of Birth")
-
-        # Banking info (⚠️ demo only, don’t store real routing numbers in plaintext!)
-        account_number = st.text_input("Bank Account Number")
-        routing_number = st.text_input("Routing Number")
-
-        # Security questions
-        sec_q1 = st.text_input("What is your mother’s maiden name?")
-        sec_q2 = st.text_input("What was the name of your first pet?")
-
-        # Two‑factor (demo: just a code input)
-        twofa_code = st.text_input("Enter 2FA code (demo)", type="password")
-
-        submitted = st.form_submit_button("Register")
-
-        if submitted:
-            # For demo, just call your register_user and ignore extra fields
-            success, msg = register_user(username, email, password)
-            if success:
-                st.success(msg)
-                st.info("Extra info captured (not yet persisted).")
-            else:
-                st.error(msg)
-
-import streamlit as st
-from app.security import fake_login, logout
-from app.banking import register_user
-
-# --- your helper functions ---
-def show_login():
-    st.subheader("Login")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-    if st.button("Login"):
-        success, msg = fake_login(username, password)
-        if success:
-            st.session_state["logged_in_user"] = username
-            st.success(msg)
-            st.experimental_rerun()
-        else:
-            st.error(msg)
-
-def show_signup():
-    st.subheader("Sign Up")
-    with st.form("signup_form"):
-        username = st.text_input("Choose a username")
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
-        submitted = st.form_submit_button("Register")
-        if submitted:
-            success, msg = register_user(username, email, password)
-            if success:
-                st.success(msg)
-            else:
-                st.error(msg)
-
-# --- main entry point ---
-def main():
-    st.sidebar.title("Navigation")
-    logo_path = "assets/BB_logo.png"   # 👈 4 spaces in from the margin
-    choice = st.sidebar.radio("Go to", ["Login", "Sign Up"], key="sidebar_nav_radio")
-
-    if choice == "Login":
-        show_login()
-    elif choice == "Sign Up":
-        show_signup()
-
-# --- run the app ---
-if __name__ == "__main__":
-    main()
-
 
 def show_banking(user):
     st.header("Banking")
@@ -367,7 +283,7 @@ def show_banking(user):
     # Quick paycheck simulation at top
     col1, col2 = st.columns([3, 1])
     with col2:
-        if st.button("💰 Simulate Paycheck", use_container_width=True, type="secondary"):
+        if st.button("💰 Simulate Paycheck", use_container_width=True, type="secondary", key="bank_paycheck"):
             success, message = simulate_paycheck(user["user_id"])
             if success:
                 toast_success("Paycheck deposited!")
@@ -489,7 +405,7 @@ def show_markets(user):
     if not user["watchlist"]:
         col1, col2 = st.columns([3, 1])
         with col2:
-            if st.button("🎯 Add Starter Watchlist", use_container_width=True):
+            if st.button("🎯 Add Starter Watchlist", use_container_width=True, key="mk_add_watchlist"):
                 user["watchlist"] = ["AAPL", "NVDA", "BTC-USD", "ETH-USD"]
                 toast_success("Starter watchlist added!")
                 add_notification("🎯 Starter watchlist added with popular stocks & crypto")
@@ -561,7 +477,7 @@ def show_portfolio(user):
     if not user["watchlist"]:
         col1, col2 = st.columns([3, 1])
         with col2:
-            if st.button("🎯 Add Starter Watchlist", use_container_width=True):
+            if st.button("🎯 Add Starter Watchlist", use_container_width=True, key="pf_add_watchlist"):
                 user["watchlist"] = ["AAPL", "NVDA", "BTC-USD", "ETH-USD"]
                 toast_success("Starter watchlist added!")
                 add_notification("🎯 Starter watchlist added with popular stocks & crypto")
@@ -612,7 +528,7 @@ def show_portfolio(user):
             cash_amount = None
     with col4:
         st.write("")  # Spacer
-        if st.button("Place Order", type="primary"):
+        if st.button("Place Order", type="primary", key="place_order_btn"):
             success, message, order = place_order(user["user_id"], symbol, side, cash_amount, units)
             if success:
                 action = "bought" if side == "buy" else "sold"
@@ -697,7 +613,7 @@ def show_settings(user):
         symbol = _clean_symbol(st.text_input("Symbol for Alert", value="BTC-USD"))
         threshold = st.number_input("Alert Threshold ($)", min_value=0.01, value=50000.0)
 
-        if st.button("Set Alert"):
+        if st.button("Set Alert", key="set_alert_btn"):
             if symbol:
                 user["settings"]["price_alerts"][symbol] = threshold
                 toast_success(f"Alert set for {symbol} at {format_money(threshold)}")
