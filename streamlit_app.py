@@ -69,13 +69,11 @@ def show_login():
 
     tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
 
-    # -----------------
-    # LOGIN TAB
-    # -----------------
+    # ---------- LOGIN TAB ----------
     with tab_login:
         col1, col2 = st.columns(2, gap="large")
 
-        # Step 1: username/password
+        # Step 1: Username / Password
         with col1:
             st.subheader("Login")
             username = st.text_input("Username (App ID)", key="login_username")
@@ -96,12 +94,12 @@ def show_login():
                 else:
                     st.error(result.get("message", "Login failed"))
 
-        # Step 2: 2FA code (right column)
+        # Step 2: 2FA
         with col2:
             st.subheader("Enter 2FA Code")
             code = st.text_input("6-digit code", placeholder="123456", key="login_2fa_code_input")
             if st.button("Verify Code", key="verify_2fa_btn"):
-                # Accept both call styles for step 2
+                # Accept both demo call styles: fake_login(None, code) or fake_login(code)
                 try:
                     verify = fake_login(None, code)
                 except TypeError:
@@ -116,9 +114,53 @@ def show_login():
                     toast_success("Login successful!")
                     st.rerun()
                 else:
-                    # tuple or dict failure -> show a generic error
                     msg = (verify.get("message") if isinstance(verify, dict) else "Invalid code")
                     st.error(msg)
+
+    # ---------- SIGN-UP TAB ----------
+    with tab_signup:
+        st.subheader("Create your account (Demo)")
+        with st.form("signup_form", clear_on_submit=False):
+            st.markdown("**Account**")
+            app_id = st.text_input("Username (App ID)", placeholder="yourhandle", key="su_appid")
+            email = st.text_input("Email", placeholder="you@example.com", key="su_email")
+            password = st.text_input("Password", type="password", key="su_password")
+
+            st.markdown("---")
+            st.markdown("**Personal Information**")
+            full_name = st.text_input("Full Name", key="su_fullname")
+            phone = st.text_input("Phone", key="su_phone")
+            dob = st.date_input("Date of Birth", key="su_dob")
+            address = st.text_input("Address", key="su_address")
+            ssn_last4 = st.text_input("SSN (last 4) — demo only", max_chars=4, key="su_ssn4")
+
+            st.markdown("---")
+            st.markdown("**Banking Information** (demo only — do not use real numbers)")
+            bank_account = st.text_input("Bank Account Number", key="su_bank_acct")
+            bank_routing = st.text_input("Routing Number", key="su_bank_routing")
+            initial_deposit = st.number_input("Initial Deposit ($)", min_value=0.0, value=0.0, step=50.0, key="su_init_dep")
+
+            agreed = st.checkbox("I understand this is a demo and not a real bank.", value=True, key="su_agree")
+            submitted = st.form_submit_button("Create Account", type="primary", key="su_submit")
+
+            if submitted:
+                if not agreed:
+                    st.warning("Please acknowledge this is a demo.")
+                else:
+                    personal = {
+                        "full_name": full_name, "phone": phone, "dob": str(dob),
+                        "address": address, "ssn_last4": ssn_last4,
+                    }
+                    banking = {"account_number": bank_account, "routing_number": bank_routing}
+                    ok, msg, user_id = register_user(
+                        app_id=app_id, email=email, password=password,
+                        personal=personal, banking=banking, initial_deposit=initial_deposit,
+                    )
+                    if ok:
+                        toast_success(msg)
+                        st.info("You can log in with your new credentials now.")
+                    else:
+                        st.error(msg)
 
     # -----------------
     # SIGN-UP TAB
