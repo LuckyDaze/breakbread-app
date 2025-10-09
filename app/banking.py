@@ -3,6 +3,11 @@ import streamlit as st
 from app.utils import uid
 from datetime import datetime
 
+def hash_password(password):
+    """Consistent password hashing - MUST match security.py"""
+    import hashlib
+    return hashlib.sha256(f"breakbread_{password}_salt".encode()).hexdigest()
+
 def register_user(app_id, email, password, personal=None, banking=None, initial_deposit=0.0):
     """Register a new user with enhanced profile data"""
     # Check if user already exists
@@ -18,7 +23,7 @@ def register_user(app_id, email, password, personal=None, banking=None, initial_
         "user_id": user_id,
         "app_id": app_id,
         "email": email,
-        "password_hash": hash_password(password),
+        "password_hash": hash_password(password),  # Use the same hash function
         "balance": float(initial_deposit),
         "watchlist": [],
         "portfolio": {},
@@ -31,7 +36,7 @@ def register_user(app_id, email, password, personal=None, banking=None, initial_
         },
         "created_at": datetime.now(),
         "last_login": datetime.now(),
-        "verified": False  # KYC pending in real app
+        "verified": False
     }
     
     # Add to users database
@@ -42,37 +47,6 @@ def register_user(app_id, email, password, personal=None, banking=None, initial_
     add_notification(f"👋 Welcome to Break Bread, {app_id}!")
     
     return True, f"Account created successfully for {app_id}", user_id
-
-def hash_password(password):
-    """Simple password hashing for demo (use proper hashing in production)"""
-    import hashlib
-    return hashlib.sha256(f"breakbread_{password}_salt".encode()).hexdigest()
-
-from datetime import datetime
-import json, os, uuid
-
-# --- persistence setup ---
-USER_FILE = "users.json"
-USERS = {}
-TRANSACTIONS = []
-
-# --- persistence helpers ---
-def load_users():
-    """Load users from JSON file into USERS dict."""
-    global USERS
-    if os.path.exists(USER_FILE):
-        with open(USER_FILE, "r") as f:
-            try:
-                USERS = json.load(f)
-            except json.JSONDecodeError:
-                USERS = {}
-    else:
-        USERS = {}
-
-def save_users():
-    """Save USERS dict to JSON file."""
-    with open(USER_FILE, "w") as f:
-        json.dump(USERS, f, indent=2)
 
 # --- demo users bootstrap ---
 def ensure_demo_users():
