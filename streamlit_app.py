@@ -101,6 +101,29 @@ def show_login():
             st.success(msg)
         else:
             st.error(msg)
+
+    import streamlit as st
+from app.security import logout
+
+def show_dashboard():
+    st.header("Dashboard")
+
+    # Show who is logged in
+    current_user = st.session_state.get("logged_in_user")
+    if current_user:
+        st.write(f"👋 Logged in as **{current_user}**")
+
+        # Logout button
+        if st.button("Logout"):
+            success, msg = logout(current_user)
+            if success:
+                st.success(msg)
+                # Clear session state
+                del st.session_state["logged_in_user"]
+                st.experimental_rerun()
+            else:
+                st.error(msg)
+    
     with col2:
         st.subheader("Enter 2FA Code")
         code = st.text_input("6-digit code", placeholder="123456")
