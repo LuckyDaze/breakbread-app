@@ -1,17 +1,11 @@
 import os
 from datetime import datetime
-from app.security import fake_login, logout
-from app.banking import ensure_demo_users, send_money, request_money, get_user, find_user, simulate_paycheck, register_user
-from app.market_data import get_cached_data, chart, mini_indices
-from app.investing import place_order, portfolio_value, unrealized_gains, allocation_breakdown
-from app.analytics import diversification_score
-from app.notifications import toast_success, toast_info, toast_warn, price_alerts_tick, add_notification, get_notifications
-from app.utils import uid, format_money, seed_price_path
 
 import pandas as pd
 import streamlit as st
 
-# App modules
+# ---- Single, de-duplicated import block ----
+from app.security import fake_login, logout, fraud_check
 from app.banking import (
     ensure_demo_users,
     send_money,
@@ -19,10 +13,11 @@ from app.banking import (
     get_user,
     find_user,
     simulate_paycheck,
+    register_user,
 )
 from app.market_data import get_cached_data, chart, mini_indices
 from app.investing import place_order, portfolio_value, unrealized_gains, allocation_breakdown
-from app.security import fake_login, logout, fraud_check
+from app.analytics import diversification_score
 from app.notifications import (
     toast_success,
     toast_info,
@@ -32,7 +27,6 @@ from app.notifications import (
     get_notifications,
 )
 from app.utils import uid, format_money, seed_price_path
-from app.analytics import diversification_score
 
 # ----------------------------
 # Page configuration
@@ -79,13 +73,15 @@ def show_login():
     with tab_login:
         col1, col2 = st.columns(2)
 
+        # Step 1: username/password
         with col1:
             st.subheader("Login")
-            username = st.text_input("Username (App ID)", key="login_username")
-            password = st.text_input("Password", type="password", key="login_password")
-            if st.button("Login", type="primary", key="login_btn"):
+            username = st.text_input("Username (App ID)", key="auth_username")
+            password = st.text_input("Password", type="password", key="auth_password")
+            if st.button("Login", type="primary", key="auth_login_btn"):
                 result = fake_login(username, password)  # step 1
-                if result.get("status") == "SUCCESS":
+                status = result.get("status")
+                if status == "SUCCESS":
                     st.session_state.auth_user = result["user_id"]
                     user = get_user(result["user_id"])
                     if user and not user.get("watchlist") and len(user.get("portfolio", {})) <= 1:
@@ -93,17 +89,23 @@ def show_login():
                         add_notification("🎯 Starter watchlist added! Check out popular stocks & crypto.")
                     toast_success("Login successful!")
                     st.rerun()
-                elif result.get("status") == "2FA_REQUIRED":
+                elif status == "2FA_REQUIRED":
                     st.info("2FA required. Enter any 6-digit code on the right (demo).")
                 else:
                     st.error(result.get("message", "Login failed"))
 
+        # Step 2: 2FA (single, unique keys)
         with col2:
             st.subheader("Enter 2FA Code")
-            code = st.text_input("6-digit code", placeholder="123456", key="login_2fa_code_input")
-            if st.button("Verify Code", key="verify_2fa_btn"):
-                verify = fake_login(code)  # step 2 (code as first arg)
-                if verify.get("status") == "SUCCESS":
+            code = st.text_input("6-digit code", placeholder="123456", key="auth_2fa_code")
+            if st.button("Verify Code", key="auth_verify_2fa_btn"):
+                # Most implementations: fake_login(code). Fallback to (None, code) if needed.
+                try:
+                    verify = fake_login(code)
+                except TypeError:
+                    verify = fake_login(None, code)
+
+                if isinstance(verify, dict) and verify.get("status") == "SUCCESS":
                     st.session_state.auth_user = verify["user_id"]
                     user = get_user(verify["user_id"])
                     if user and not user.get("watchlist") and len(user.get("portfolio", {})) <= 1:
@@ -112,7 +114,7 @@ def show_login():
                     toast_success("Login successful!")
                     st.rerun()
                 else:
-                    st.error(verify.get("message", "Invalid code"))
+                    st.error((verify or {}).get("message", "Invalid code"))
 
     # --- SIGN UP ---
     with tab_signup:
@@ -135,9 +137,15 @@ def show_login():
             st.markdown("**Banking Information** (demo only — do not use real numbers)")
             bank_account = st.text_input("Bank Account Number", key="su_bank_acct")
             bank_routing = st.text_input("Routing Number", key="su_bank_routing")
-            initial_deposit = st.number_input("Initial Deposit ($)", min_value=0.0, value=0.0, step=50.0, key="su_init_dep")
+            initial_deposit = st.number_input(
+                "Initial Deposit ($)", min_value=0.0, value=0.0, step=50.0, key="su_init_dep"
+            )
 
-            agreed = st.checkbox("I understand this is a demo and not a real bank.", value=True, key="su_agree")
+            agreed = st.checkbox(
+                "I understand this is a demo and not a real bank.",
+                value=True,
+                key="su_agree",
+            )
             submitted = st.form_submit_button("Create Account", type="primary", key="su_submit")
 
             if submitted:
@@ -145,58 +153,26 @@ def show_login():
                     st.warning("Please acknowledge this is a demo.")
                 else:
                     personal = {
-                        "full_name": full_name, "phone": phone, "dob": str(dob),
-                        "address": address, "ssn_last4": ssn_last4,
+                        "full_name": full_name,
+                        "phone": phone,
+                        "dob": str(dob),
+                        "address": address,
+                        "ssn_last4": ssn_last4,
                     }
                     banking = {"account_number": bank_account, "routing_number": bank_routing}
                     ok, msg, user_id = register_user(
-                        app_id=app_id, email=email, password=password,
-                        personal=personal, banking=banking, initial_deposit=initial_deposit,
+                        app_id=app_id,
+                        email=email,
+                        password=password,
+                        personal=personal,
+                        banking=banking,
+                        initial_deposit=initial_deposit,
                     )
                     if ok:
                         toast_success(msg)
                         st.info("You can log in with your new credentials now.")
                     else:
                         st.error(msg)
-
-
-    with col2:
-        st.subheader("Enter 2FA Code")
-        code = st.text_input("6-digit code", placeholder="123456", key="login_2fa_code")
-        if st.button("Verify Code", key="verify_2fa_btn"):
-            # Common pattern: fake_login(None, code). Try gracefully.
-            try:
-                verify = fake_login(None, code)
-            except TypeError:
-                # Some versions accept just the code
-                verify = fake_login(code)
-
-            if isinstance(verify, tuple):
-                success = bool(verify[0])
-                user_id = verify[1] if len(verify) > 1 and isinstance(verify[1], str) else "user_1"
-                if success:
-                    st.session_state.auth_user = user_id
-                    user = get_user(user_id)
-                    if user and not user.get("watchlist") and len(user.get("portfolio", {})) <= 1:
-                        user["watchlist"] = ["AAPL", "NVDA", "BTC-USD", "ETH-USD"]
-                        add_notification("🎯 Starter watchlist added! Check out popular stocks & crypto.")
-                    toast_success("Login successful!")
-                    st.rerun()
-                else:
-                    st.error("Invalid code")
-            elif isinstance(verify, dict):
-                if verify.get("status") == "SUCCESS":
-                    st.session_state.auth_user = verify["user_id"]
-                    user = get_user(verify["user_id"])
-                    if user and not user.get("watchlist") and len(user.get("portfolio", {})) <= 1:
-                        user["watchlist"] = ["AAPL", "NVDA", "BTC-USD", "ETH-USD"]
-                        add_notification("🎯 Starter watchlist added! Check out popular stocks & crypto.")
-                    toast_success("Login successful!")
-                    st.rerun()
-                else:
-                    st.error(verify.get("message", "Invalid code"))
-            else:
-                st.error("Unexpected verification response.")
 
 
 # ----------------------------
@@ -274,7 +250,8 @@ def show_dashboard(user):
     with col4:
         recent_tx = len(
             [
-                t for t in st.session_state.transactions
+                t
+                for t in st.session_state.transactions
                 if t["sender_id"] == user["user_id"] and (datetime.now() - t["ts"]).days <= 7
             ]
         )
@@ -321,7 +298,9 @@ def show_dashboard(user):
             user_activities.append(
                 {
                     "Type": f"{status_icon} Payment",
-                    "Amount": f"-{format_money(tx['amount'])}" if tx["sender_id"] == user["user_id"] else f"+{format_money(tx['amount'])}",
+                    "Amount": f"-{format_money(tx['amount'])}"
+                    if tx["sender_id"] == user["user_id"]
+                    else f"+{format_money(tx['amount'])}",
                     "Description": tx["note"],
                     "Date": tx["ts"].strftime("%Y-%m-%d"),
                     "Status": tx["status"].title(),
@@ -432,7 +411,8 @@ def show_banking(user):
     with tab3:
         st.subheader("Transaction History")
         user_tx = [
-            t for t in st.session_state.transactions
+            t
+            for t in st.session_state.transactions
             if t["sender_id"] == user["user_id"] or t["recipient_id"] == user["user_id"]
         ]
 
@@ -694,7 +674,7 @@ def main():
         )
 
     # Auth gate
-    if not st.session_state.auth_user:
+    if not st.session_state.get("auth_user"):
         show_login()
         return
 
