@@ -348,9 +348,10 @@ def show_signup():
 # --- main entry point ---
 def main():
     st.sidebar.title("Navigation")
- 
+ logo_path = "assets/BB_logo.png"
 choice = st.sidebar.radio("Go to", ["Login", "Sign Up"], key="nav_radio")
-    if choice == "Login":
+    
+if choice == "Login":
         show_login()
     elif choice == "Sign Up":
         show_signup()
