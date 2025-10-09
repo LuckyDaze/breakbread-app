@@ -901,3 +901,196 @@ def show_portfolio(user):
             data = get_cached_data(sym, "1d")
             if data:
                 current_price = data["current
+
+
+def show_markets(user):
+    st.header("📈 Multi-Asset Markets")
+    
+    # Quick asset categories
+    st.subheader("Asset Classes")
+    asset_tabs = st.tabs(["Stocks & ETFs", "Crypto", "Bonds & Treasuries", "Alternative Investments"])
+    
+    with asset_tabs[0]:
+        show_stocks_etfs()
+    
+    with asset_tabs[1]:
+        show_crypto_assets()
+    
+    with asset_tabs[2]:
+        show_bonds_treasuries()
+    
+    with asset_tabs[3]:
+        show_alternative_investments()
+    
+    # Universal research tool
+    st.markdown("---")
+    show_universal_research()
+
+def show_stocks_etfs():
+    st.subheader("📊 Stocks & ETFs")
+    
+    # Major indices
+    st.write("**Major Indices**")
+    indices = get_major_indices()
+    cols = st.columns(len(indices))
+    
+    for i, index in enumerate(indices):
+        with cols[i]:
+            delta_color = "normal"  # Let Streamlit decide based on value
+            st.metric(
+                label=index['name'],
+                value=f"${index['price']:,.2f}",
+                delta=f"{index['change_percent']:+.2f}%",
+                delta_color=delta_color
+            )
+            st.caption(f"Source: {index['source']}")
+
+def show_crypto_assets():
+    st.subheader("₿ Cryptocurrencies")
+    
+    crypto_data = get_crypto_prices()
+    cols = st.columns(4)
+    
+    for i, crypto in enumerate(crypto_data):
+        with cols[i]:
+            st.metric(
+                label=crypto['symbol'],
+                value=f"${crypto['price']:,.2f}",
+                delta=f"{crypto['change_percent']:+.2f}%"
+            )
+            st.caption(f"Source: {crypto['source']}")
+
+def show_bonds_treasuries():
+    st.subheader("📋 Bonds & Treasuries")
+    
+    treasury_data = get_treasury_yields()
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("1-Month Treasury", f"{treasury_data['1_month']:.2f}%")
+    with col2:
+        st.metric("2-Year Treasury", f"{treasury_data['2_year']:.2f}%")
+    with col3:
+        st.metric("10-Year Treasury", f"{treasury_data['10_year']:.2f}%")
+    
+    st.caption(f"Source: {treasury_data['source']} | Updated: {treasury_data['last_updated']}")
+
+def show_alternative_investments():
+    st.subheader("💎 Alternative Investments")
+    
+    # Precious Metals
+    metals_data = get_metals_prices()
+    st.write("**Precious Metals**")
+    m1, m2, m3 = st.columns(3)
+    with m1:
+        st.metric("Gold (oz)", f"${metals_data['gold']:,.2f}")
+    with m2:
+        st.metric("Silver (oz)", f"${metals_data['silver']:,.2f}")
+    with m3:
+        st.metric("Platinum (oz)", f"${metals_data['platinum']:,.2f}")
+    st.caption(f"Source: {metals_data['source']}")
+    
+    # Startup Investing
+    st.write("**Startup Investing Platforms**")
+    startups = get_startup_investments()
+    for platform in startups['platforms']:
+        with st.expander(f"🎯 {platform['name']}"):
+            st.write(f"Minimum Investment: ${platform['min_investment']:,}")
+            st.write(f"Expected ROI: {platform['avg_roi']}")
+            st.write(f"Liquidity Horizon: {platform['liquidity']}")
+    
+    # Royalty Investing
+    st.write("**Royalty Investments**")
+    royalties = get_royalty_investments()
+    for royalty in royalties['royalties']:
+        with st.expander(f"🎵 {royalty['asset']}"):
+            st.write(f"Current Yield: {royalty['yield']}")
+            st.write(f"Minimum: ${royalty['min_investment']:,}")
+            st.write(f"Term: {royalty['term']}")
+
+def show_universal_research():
+    st.subheader("🔍 Universal Research Tool")
+    
+    col1, col2, col3 = st.columns([2, 1, 1])
+    
+    with col1:
+        symbol = st.text_input(
+            "Research Any Asset", 
+            value="AAPL",
+            placeholder="AAPL, BTC-USD, GC=F, etc.",
+            key="universal_research"
+        )
+    
+    with col2:
+        period = st.selectbox("Period", ["1d", "1wk", "1mo", "3mo", "1y"], key="research_period")
+    
+    with col3:
+        st.write("")  # Spacer
+        if st.button("Research Asset", type="primary"):
+            st.session_state.research_symbol = symbol
+            st.rerun()
+    
+    # Research results
+    if hasattr(st.session_state, 'research_symbol'):
+        symbol = st.session_state.research_symbol
+        data = get_stock_data(symbol, period)
+        
+        if data:
+            # Display metrics
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Current Price", f"${data['current_price']:,.2f}")
+            with col2:
+                st.metric("Change", f"${data['change']:+.2f}")
+            with col3:
+                st.metric("Change %", f"{data['change_percent']:+.2f}%")
+            with col4:
+                st.metric("52W Range", f"${data['52w_low']:.0f}-${data['52w_high']:.0f}")
+            
+            st.caption(f"Data Source: {data['source']} | Last Updated: {data['last_updated'].strftime('%Y-%m-%d %H:%M')}")
+            
+            # Simple chart
+            if not data['historical'].empty:
+                st.line_chart(data['historical']['Close'])
+        else:
+            st.error(f"Could not fetch data for {symbol}. Try a different symbol.")
+
+            def show_data_sources():
+    st.header("📚 Data Sources & Usage")
+    
+    st.markdown("""
+    ### Live Data Sources
+    
+    | Source | Assets Covered | Update Frequency | Limits |
+    |--------|----------------|------------------|---------|
+    | **Yahoo Finance** | Stocks, ETFs, Indices | Real-time (delayed) | None |
+    | **U.S. Treasury** | Treasury Yields | Daily | None |
+    | **CoinGecko** | Cryptocurrencies | Real-time | 50 calls/min |
+    | **Metals-API** | Precious Metals | Real-time | Requires API Key |
+    
+    ### Demo Data Sources
+    
+    | Platform | Assets | Status |
+    |----------|--------|--------|
+    | **AngelList** | Startup Investments | Demo Data |
+    | **StartEngine** | Equity Crowdfunding | Demo Data |
+    | **Royalty Exchange** | Royalty Investments | Demo Data |
+    | **BizBuySell** | Business Listings | Demo Data |
+    
+    ### API Key Setup
+    To enable live metals data, add your Metals-API key to `.streamlit/secrets.toml`:
+    ```toml
+    METALS_API_KEY = "your_key_here"
+    ```
+    """)
+    
+    # Usage statistics
+    st.subheader("📈 Data Usage")
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Live Data Sources", "4")
+    with col2:
+        st.metric("Demo Data Sources", "4") 
+    with col3:
+        st.metric("Total Assets", "50+")
