@@ -6,7 +6,11 @@ import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 import yfinance as yf
-
+from data_providers.yahoo import get_stock_data, get_major_indices
+from data_providers.treasury import get_treasury_yields
+from data_providers.crypto import get_crypto_prices
+from data_providers.metals import get_metals_prices
+from data_providers.alternative import get_startup_investments, get_royalty_investments, get_business_listings
 # ----------------------------
 # Page configuration
 # ----------------------------
