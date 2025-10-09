@@ -80,7 +80,12 @@ def show_login():
             password = st.text_input("Password", type="password", key="auth_password")
             if st.button("Login", type="primary", key="auth_login_btn"):
                 result = fake_login(username, password)  # step 1
+                # ✅ replacement at line ~83
+            if result and isinstance(result, dict):
                 status = result.get("status")
+            else:
+                st.error("Login function returned an unexpected value")
+                return
                 if status == "SUCCESS":
                     st.session_state.auth_user = result["user_id"]
                     user = get_user(result["user_id"])
@@ -97,14 +102,20 @@ def show_login():
         # Step 2: 2FA (single, unique keys)
         with col2:
             st.subheader("Enter 2FA Code")
-            code = st.text_input("6-digit code", placeholder="123456", key="auth_2fa_code")
-            if st.button("Verify Code", key="auth_verify_2fa_btn"):
+            code = st.text_input("6-digit code", placeholder="123456", key="login_2fa_code")
+        if st.button("Verify Code", key="login_verify_2fa_btn"):
+            result = security_manager._verify_2fa(code)   # pass the code, not username
+            if result and isinstance(result, dict):
+                status = result.get("status")
+                # handle SUCCESS / FAILED here
                 # Most implementations: fake_login(code). Fallback to (None, code) if needed.
                 try:
                     verify = fake_login(code)
                 except TypeError:
                     verify = fake_login(None, code)
 
+                return {"status": "FAILED", "message": "Unexpected login state"}
+                
                 if isinstance(verify, dict) and verify.get("status") == "SUCCESS":
                     st.session_state.auth_user = verify["user_id"]
                     user = get_user(verify["user_id"])
