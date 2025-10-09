@@ -1,11 +1,11 @@
 import streamlit as st
-from app.common import get_user, find_user  # Changed import
+from app.common import get_user, find_user
 
 def fake_login(username=None, code=None):
     """Demo login with optional 2FA simulation."""
     if code and len(code) == 6 and code.isdigit():
-        # 2FA verification
-        return {"status": "SUCCESS", "user_id": "demo_user"}
+        # 2FA verification - accept any 6-digit code in demo
+        return {"status": "SUCCESS", "user_id": "user_1"}  # Default to first user
     
     user = find_user(username)
     if user and user.get("password") == "demo123":  # Simple demo auth
