@@ -65,9 +65,11 @@ def _clean_symbol(text: str) -> str:
 # Authentication
 # ----------------------------
 def show_login():
-    st.header("Welcome to Break Bread")
+    st.subheader("Welcome")
 
+    # define tabs once
     tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
+
     with tab_login:
         username = st.text_input("Username", key="login_username")
         password = st.text_input("Password", type="password", key="login_password")
@@ -85,6 +87,8 @@ def show_login():
                 st.success(msg)
             else:
                 st.error(msg)
+
+
 
 
     # ---------- LOGIN TAB ----------
