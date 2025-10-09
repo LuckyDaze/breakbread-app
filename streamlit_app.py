@@ -86,43 +86,25 @@ from app.security import fake_login
 def show_login():
     st.subheader("Login")
 
-    # Create two columns
+    # Always define variables at the top level of the function
     col1, col2 = st.columns(2)
 
     with col1:
-        username = st.text_input("Username")
+        username = st.text_input("Username", key="login_username")
     with col2:
-        password = st.text_input("Password", type="password")
+        password = st.text_input("Password", type="password", key="login_password")
 
     if st.button("Login"):
-        success, msg = fake_login(username, password)
-        if success:
-            st.session_state["logged_in_user"] = username
-            st.success(msg)
-        else:
-            st.error(msg)
-
-    import streamlit as st
-from app.security import logout
-
-def show_dashboard():
-    st.header("Dashboard")
-
-    # Show who is logged in
-    current_user = st.session_state.get("logged_in_user")
-    if current_user:
-        st.write(f"👋 Logged in as **{current_user}**")
-
-        # Logout button
-        if st.button("Logout"):
-            success, msg = logout(current_user)
+        if username and password:  # make sure both are filled
+            success, msg = fake_login(username, password)
             if success:
+                st.session_state["logged_in_user"] = username
                 st.success(msg)
-                # Clear session state
-                del st.session_state["logged_in_user"]
                 st.experimental_rerun()
             else:
                 st.error(msg)
+        else:
+            st.warning("Please enter both username and password.")
     
     with col2:
         st.subheader("Enter 2FA Code")
