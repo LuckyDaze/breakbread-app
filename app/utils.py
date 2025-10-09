@@ -1,20 +1,23 @@
 import uuid
 import random
-import pandas as pd
+from datetime import datetime, timedelta
 
 def uid():
-    """Generate a short unique ID"""
+    """Generate a unique ID."""
     return str(uuid.uuid4())[:8]
 
 def format_money(amount):
-    """Format currency as $X,XXX.XX"""
-    sign = "-" if amount < 0 else ""
-    return f"{sign}${abs(amount):,.2f}"
+    """Format money with dollar sign and 2 decimal places."""
+    if amount >= 0:
+        return f"${amount:,.2f}"
+    else:
+        return f"-${abs(amount):,.2f}"
 
-def seed_price_path(base, days=30):
-    """Generate fake daily portfolio values"""
-    values = [base]
+def seed_price_path(base_value, days, volatility=0.02):
+    """Generate simulated price path for charts."""
+    prices = [base_value]
     for _ in range(days - 1):
-        change = random.uniform(-0.02, 0.02)
-        values.append(values[-1] * (1 + change))
-    return pd.Series(values)
+        change = random.uniform(-volatility, volatility)
+        new_price = prices[-1] * (1 + change)
+        prices.append(new_price)
+    return prices
