@@ -11,7 +11,8 @@ from app.investing import place_order, portfolio_value, unrealized_gains, alloca
 from app.security import fake_login, logout, fraud_check
 from app.notifications import toast_success, toast_info, toast_warn, price_alerts_tick, add_notification, get_notifications
 from app.utils import uid, format_money, seed_price_path
-from app.analytics import diversification_score
+from app.analytics import user_activity_summary, diversification_score
+import streamlit as st
 from app.notifications import (
     toast_success,
     toast_info,
