@@ -1,42 +1,44 @@
 import os
-from datetime import datetime
-
+import uuid
+import random
+from datetime import datetime, timedelta
 import pandas as pd
 import streamlit as st
-
-# ---- Single, de-duplicated import block ----
-from app.security import fake_login, logout, fraud_check
-from app.banking import (
-    ensure_demo_users,
-    send_money,
-    request_money,
-    get_user,
-    find_user,
-    simulate_paycheck,
-    register_user,
-)
-from app.market_data import get_cached_data, chart, mini_indices
-from app.investing import place_order, portfolio_value, unrealized_gains, allocation_breakdown
-from app.analytics import diversification_score
-from app.notifications import (
-    toast_success,
-    toast_info,
-    toast_warn,
-    price_alerts_tick,
-    add_notification,
-    get_notifications,
-)
-from app.utils import uid, format_money, seed_price_path
+import plotly.graph_objects as go
+import yfinance as yf
 
 # ----------------------------
 # Page configuration
 # ----------------------------
 st.set_page_config(
     page_title="Break Bread",
-    page_icon="assets/favicon.png",
+    page_icon="🍞",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# ----------------------------
+# Utility Functions
+# ----------------------------
+def uid():
+    """Generate a unique ID."""
+    return str(uuid.uuid4())[:8]
+
+def format_money(amount):
+    """Format money with dollar sign and 2 decimal places."""
+    if amount >= 0:
+        return f"${amount:,.2f}"
+    else:
+        return f"-${abs(amount):,.2f}"
+
+def seed_price_path(base_value, days, volatility=0.02):
+    """Generate simulated price path for charts."""
+    prices = [base_value]
+    for _ in range(days - 1):
+        change = random.uniform(-volatility, volatility)
+        new_price = prices[-1] * (1 + change)
+        prices.append(new_price)
+    return prices
 
 # ----------------------------
 # Initialize session state
@@ -52,66 +54,422 @@ for key, default in [
     if key not in st.session_state:
         st.session_state[key] = default
 
-# Seed demo users
-ensure_demo_users()
+# ----------------------------
+# Core App Functions
+# ----------------------------
+def ensure_demo_users():
+    """Ensure demo users exist in session state."""
+    if not st.session_state.users:
+        demo_users = [
+            {
+                "user_id": "user_1",
+                "app_id": "janedoe", 
+                "email": "jane@example.com",
+                "password": "demo123",
+                "balance": 5000.0,
+                "portfolio": {},
+                "watchlist": [],
+                "settings": {"dark_mode": False, "price_alerts": {}}
+            },
+            {
+                "user_id": "user_2", 
+                "app_id": "johndoe",
+                "email": "john@example.com", 
+                "password": "demo123",
+                "balance": 3000.0,
+                "portfolio": {},
+                "watchlist": [],
+                "settings": {"dark_mode": False, "price_alerts": {}}
+            }
+        ]
+        
+        for user in demo_users:
+            st.session_state.users[user["user_id"]] = user
 
+def get_user(user_id):
+    """Get user by ID."""
+    return st.session_state.users.get(user_id)
 
+def find_user(identifier):
+    """Find user by app_id or email."""
+    if not identifier:
+        return None
+    identifier = identifier.strip().lower()
+    for user in st.session_state.users.values():
+        if user["app_id"].lower() == identifier or user["email"].lower() == identifier:
+            return user
+    return None
+
+def fake_login(username=None, code=None):
+    """Demo login with optional 2FA simulation."""
+    if code and len(code) == 6 and code.isdigit():
+        # 2FA verification - accept any 6-digit code in demo
+        return {"status": "SUCCESS", "user_id": "user_1"}
+    
+    user = find_user(username)
+    if user and user.get("password") == "demo123":
+        return {"status": "SUCCESS", "user_id": user["user_id"]}
+    elif user:
+        return {"status": "2FA_REQUIRED", "message": "Enter any 6-digit code"}
+    else:
+        return {"status": "ERROR", "message": "User not found"}
+
+def logout():
+    """Logout current user."""
+    st.session_state.auth_user = None
+
+def fraud_check(transaction):
+    """Basic fraud detection."""
+    warnings = []
+    if transaction["amount"] > 10000:
+        warnings.append("Large transaction amount")
+    return warnings
+
+def send_money(sender_id, recipient_identifier, amount, note=""):
+    """Send money to another user."""
+    recipient = find_user(recipient_identifier)
+    if not recipient:
+        return False, "Recipient not found"
+    
+    sender = get_user(sender_id)
+    if not sender:
+        return False, "Sender not found"
+    
+    if sender["balance"] < amount:
+        return False, "Insufficient funds"
+    
+    # Deduct from sender
+    sender["balance"] -= amount
+    # Add to recipient  
+    recipient["balance"] += amount
+    
+    # Record transaction
+    transaction = {
+        "transaction_id": uid(),
+        "sender_id": sender_id,
+        "recipient_id": recipient["user_id"],
+        "amount": amount,
+        "fee": 0.0,
+        "note": note,
+        "status": "completed",
+        "ts": datetime.now()
+    }
+    st.session_state.transactions.append(transaction)
+    
+    return True, "Payment sent successfully"
+
+def request_money(requestor_id, recipient_identifier, amount, note=""):
+    """Request money from another user."""
+    recipient = find_user(recipient_identifier)
+    if not recipient:
+        return False, "Recipient not found"
+    
+    request_data = {
+        "request_id": uid(),
+        "requestor_id": requestor_id,
+        "recipient_id": recipient["user_id"],
+        "amount": amount,
+        "note": note,
+        "status": "pending",
+        "ts": datetime.now()
+    }
+    st.session_state.requests.append(request_data)
+    return True, "Money request sent"
+
+def simulate_paycheck(user_id):
+    """Simulate paycheck deposit."""
+    user = get_user(user_id)
+    if not user:
+        return False, "User not found"
+    
+    user["balance"] += 2000.0
+    return True, "Paycheck deposited"
+
+def register_user(app_id, email, password, personal, banking, initial_deposit):
+    """Register a new user."""
+    if find_user(app_id) or find_user(email):
+        return False, "User already exists", None
+    
+    user_id = f"user_{uid()}"
+    new_user = {
+        "user_id": user_id,
+        "app_id": app_id,
+        "email": email,
+        "password": password,
+        "balance": float(initial_deposit),
+        "portfolio": {},
+        "watchlist": [],
+        "settings": {"dark_mode": False, "price_alerts": {}},
+        "personal": personal,
+        "banking": banking
+    }
+    
+    st.session_state.users[user_id] = new_user
+    return True, "Registration successful", user_id
+
+def get_cached_data(symbol, period="1mo"):
+    """Get market data with caching."""
+    try:
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period=period)
+        if hist.empty:
+            return None
+            
+        info = ticker.info
+        current_price = hist['Close'].iloc[-1]
+        prev_price = hist['Close'].iloc[-2] if len(hist) > 1 else current_price
+        change = current_price - prev_price
+        change_percent = (change / prev_price) * 100
+        
+        return {
+            'symbol': symbol,
+            'current_price': current_price,
+            'change': change,
+            'change_percent': change_percent,
+            'historical': hist,
+            '52w_high': info.get('fiftyTwoWeekHigh', current_price * 1.2),
+            '52w_low': info.get('fiftyTwoWeekLow', current_price * 0.8)
+        }
+    except:
+        return None
+
+def mini_indices():
+    """Get major indices data."""
+    indices = [
+        {"symbol": "^GSPC", "name": "S&P 500"},
+        {"symbol": "^DJI", "name": "Dow Jones"},
+        {"symbol": "^IXIC", "name": "NASDAQ"},
+        {"symbol": "BTC-USD", "name": "Bitcoin"}
+    ]
+    
+    results = []
+    for index in indices:
+        data = get_cached_data(index["symbol"], "1d")
+        if data:
+            results.append({
+                "name": index["name"],
+                "price": data["current_price"],
+                "chg_pct": data["change_percent"]
+            })
+        else:
+            # Fallback data
+            results.append({
+                "name": index["name"],
+                "price": 5000 + random.randint(-100, 100),
+                "chg_pct": random.uniform(-1, 1)
+            })
+    
+    return results
+
+def chart(historical_data, symbol, chart_type="line"):
+    """Create a chart from historical data."""
+    fig = go.Figure()
+    
+    if chart_type == "candlestick":
+        fig.add_trace(go.Candlestick(
+            x=historical_data.index,
+            open=historical_data['Open'],
+            high=historical_data['High'],
+            low=historical_data['Low'],
+            close=historical_data['Close'],
+            name=symbol
+        ))
+    else:
+        fig.add_trace(go.Scatter(
+            x=historical_data.index,
+            y=historical_data['Close'],
+            mode='lines',
+            name=symbol
+        ))
+    
+    fig.update_layout(
+        title=f"{symbol} Price",
+        xaxis_title="Date",
+        yaxis_title="Price ($)",
+        height=400
+    )
+    return fig
+
+def place_order(user_id, symbol, side, cash_amount=None, units=None):
+    """Place a trading order."""
+    user = get_user(user_id)
+    if not user:
+        return False, "User not found", None
+    
+    data = get_cached_data(symbol, "1d")
+    if not data:
+        return False, "Invalid symbol", None
+    
+    current_price = data["current_price"]
+    
+    if side == "buy":
+        if cash_amount is None:
+            return False, "Cash amount required for buy orders", None
+        
+        units = cash_amount / current_price
+        total_cost = cash_amount
+        
+        if user["balance"] < total_cost:
+            return False, "Insufficient funds", None
+        
+        user["balance"] -= total_cost
+        
+    else:  # sell
+        if units is None:
+            return False, "Units required for sell orders", None
+        
+        portfolio_units = user["portfolio"].get(symbol, {}).get("units", 0)
+        if units > portfolio_units:
+            return False, "Insufficient units", None
+        
+        total_cost = units * current_price
+        user["balance"] += total_cost
+    
+    # Update portfolio
+    if symbol not in user["portfolio"]:
+        user["portfolio"][symbol] = {"units": 0, "avg_cost": 0}
+    
+    if side == "buy":
+        old_units = user["portfolio"][symbol]["units"]
+        old_avg = user["portfolio"][symbol]["avg_cost"]
+        new_units = old_units + units
+        new_avg = ((old_units * old_avg) + (units * current_price)) / new_units
+        
+        user["portfolio"][symbol]["units"] = new_units
+        user["portfolio"][symbol]["avg_cost"] = new_avg
+    else:
+        user["portfolio"][symbol]["units"] -= units
+        if user["portfolio"][symbol]["units"] <= 0:
+            del user["portfolio"][symbol]
+    
+    # Record order
+    order = {
+        "order_id": uid(),
+        "user_id": user_id,
+        "symbol": symbol,
+        "side": side,
+        "units": units,
+        "fill_price": current_price,
+        "value": total_cost,
+        "status": "filled",
+        "ts": datetime.now()
+    }
+    st.session_state.orders.append(order)
+    
+    return True, "Order executed successfully", order
+
+def portfolio_value(user_id):
+    """Calculate total portfolio value."""
+    user = get_user(user_id)
+    if not user:
+        return 0
+    
+    total = 0
+    for symbol, position in user["portfolio"].items():
+        data = get_cached_data(symbol, "1d")
+        if data:
+            total += position["units"] * data["current_price"]
+    return total
+
+def unrealized_gains(user_id):
+    """Calculate unrealized gains/losses."""
+    user = get_user(user_id)
+    if not user:
+        return 0
+    
+    total = 0
+    for symbol, position in user["portfolio"].items():
+        data = get_cached_data(symbol, "1d")
+        if data:
+            current_value = position["units"] * data["current_price"]
+            cost_basis = position["units"] * position["avg_cost"]
+            total += current_value - cost_basis
+    return total
+
+def diversification_score(user_id):
+    """Calculate diversification score (simplified)."""
+    user = get_user(user_id)
+    if not user or not user["portfolio"]:
+        return 0
+    
+    # Simple score based on number of holdings
+    num_holdings = len(user["portfolio"])
+    return min(num_holdings * 20, 100)
+
+def toast_success(message):
+    """Show success toast."""
+    st.toast(f"✅ {message}")
+
+def toast_info(message):
+    """Show info toast."""
+    st.toast(f"ℹ️ {message}")
+
+def toast_warn(message):
+    """Show warning toast."""
+    st.toast(f"⚠️ {message}")
+
+def add_notification(message):
+    """Add a notification."""
+    notification = {
+        "id": uid(),
+        "message": message,
+        "timestamp": datetime.now(),
+        "read": False
+    }
+    st.session_state.notifications.append(notification)
+
+def get_notifications():
+    """Get all notifications."""
+    return st.session_state.notifications
+
+def price_alerts_tick(user):
+    """Check price alerts (simplified)."""
+    # This would normally check current prices against alert thresholds
+    pass
+
+# ----------------------------
+# UI Components
+# ----------------------------
 def _clean_symbol(text: str) -> str:
     """Normalize ticker inputs."""
     return (text or "").strip().upper()
 
-
-# ----------------------------
-# Authentication
-# ----------------------------
 def show_login():
     st.header("Welcome to Break Bread")
 
-    # Create both tabs and keep all UI INSIDE these blocks
     tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
 
-    # ---------- LOGIN TAB ----------
     with tab_login:
         col1, col2 = st.columns(2, gap="large")
 
-        # Step 1: Username / Password
         with col1:
             st.subheader("Login")
             username = st.text_input("Username (App ID)", key="login_username", placeholder="janedoe or johndoe")
             password = st.text_input("Password", type="password", key="login_password", value="demo123")
             
-            # FIXED: Proper indentation for the login button
             if st.button("Login", type="primary", key="login_btn"):
                 if not username or not password:
                     st.error("Please enter both username and password")
                 else:
-                    try:
-                        result = fake_login(username, password)
-                        
-                        # Debug: Show what we're getting back
-                        st.write("Debug - Login Response:", result)
-                        
-                        if isinstance(result, dict):
-                            status = result.get("status")
-                            if status == "SUCCESS":
-                                st.session_state.auth_user = result["user_id"]
-                                user = get_user(result["user_id"])
-                                if user and not user.get("watchlist") and len(user.get("portfolio", {})) <= 1:
-                                    user["watchlist"] = ["AAPL", "NVDA", "BTC-USD", "ETH-USD"]
-                                    add_notification("🎯 Starter watchlist added! Check out popular stocks & crypto.")
-                                toast_success("Login successful!")
-                                st.rerun()
-                            elif status == "2FA_REQUIRED":
-                                st.info("2FA required. Enter any 6-digit code on the right (demo).")
-                            else:
-                                st.error(result.get("message", "Login failed"))
+                    result = fake_login(username, password)
+                    
+                    if isinstance(result, dict):
+                        status = result.get("status")
+                        if status == "SUCCESS":
+                            st.session_state.auth_user = result["user_id"]
+                            user = get_user(result["user_id"])
+                            if user and not user.get("watchlist") and len(user.get("portfolio", {})) <= 1:
+                                user["watchlist"] = ["AAPL", "NVDA", "BTC-USD", "ETH-USD"]
+                                add_notification("🎯 Starter watchlist added! Check out popular stocks & crypto.")
+                            toast_success("Login successful!")
+                            st.rerun()
+                        elif status == "2FA_REQUIRED":
+                            st.info("2FA required. Enter any 6-digit code on the right (demo).")
                         else:
-                            st.error(f"Unexpected response type: {type(result)}")
-                            
-                    except Exception as e:
-                        st.error(f"Login error: {str(e)}")
+                            st.error(result.get("message", "Login failed"))
+                    else:
+                        st.error("Login failed")
 
-        # Step 2: 2FA (demo accepts any 6 digits while a 2FA is pending)
         with col2:
             st.subheader("Enter 2FA Code")
             code = st.text_input("6-digit code", placeholder="123456", key="login_2fa_code_input_tab")
@@ -120,16 +478,7 @@ def show_login():
                 if not code or len(code) != 6 or not code.isdigit():
                     st.error("Please enter a valid 6-digit code")
                 else:
-                    try:
-                        # Try different signature patterns
-                        verify = fake_login(code)  # Most common pattern
-                    except TypeError:
-                        try:
-                            verify = fake_login(None, code)  # Alternative pattern
-                        except Exception as e:
-                            st.error(f"Verification error: {str(e)}")
-                            return
-
+                    verify = fake_login(code=code)
                     if isinstance(verify, dict) and verify.get("status") == "SUCCESS":
                         st.session_state.auth_user = verify["user_id"]
                         user = get_user(verify["user_id"])
@@ -142,7 +491,6 @@ def show_login():
                         msg = verify.get("message", "Invalid code") if isinstance(verify, dict) else "Invalid code"
                         st.error(msg)
 
-    # ---------- SIGN-UP TAB ----------
     with tab_signup:
         st.subheader("Create your account (Demo)")
         with st.form("signup_form", clear_on_submit=True):
@@ -199,20 +547,16 @@ def show_login():
                         toast_success(msg)
                         add_notification(f"🎉 Welcome {app_id}! Account created with ${initial_deposit:.2f} initial deposit.")
                         st.success("Account created successfully! You can now log in with your credentials.")
-                        st.balloons()  # Celebration!
+                        st.balloons()
                     else:
                         st.error(msg)
 
-# ----------------------------
-# Main app shell
-# ----------------------------
 def show_main_app():
     user = get_user(st.session_state.auth_user)
+    if not user:
+        logout()
+        st.rerun()
 
-    # Price alerts tick (throttled inside)
-    price_alerts_tick(user)
-
-    # Sidebar
     with st.sidebar:
         st.header(f"Welcome, {user['app_id']}!")
         st.metric("Cash Balance", format_money(user["balance"]))
@@ -232,7 +576,6 @@ def show_main_app():
             logout()
             st.rerun()
 
-    # Notifications tray (reuse sidebar)
     with st.sidebar:
         st.divider()
         with st.expander("🔔 Notifications", expanded=False):
@@ -246,7 +589,6 @@ def show_main_app():
             else:
                 st.info("No notifications")
 
-    # Routing
     if nav == "Dashboard":
         show_dashboard(user)
     elif nav == "Banking":
@@ -258,10 +600,6 @@ def show_main_app():
     elif nav == "Settings":
         show_settings(user)
 
-
-# ----------------------------
-# Screens
-# ----------------------------
 def show_dashboard(user):
     st.header("Dashboard")
 
@@ -276,16 +614,9 @@ def show_dashboard(user):
         div_score = diversification_score(user["user_id"])
         st.metric("Diversification Score", f"{div_score}/100")
     with col4:
-        recent_tx = len(
-            [
-                t
-                for t in st.session_state.transactions
-                if t["sender_id"] == user["user_id"] and (datetime.now() - t["ts"]).days <= 7
-            ]
-        )
+        recent_tx = len([t for t in st.session_state.transactions if t["sender_id"] == user["user_id"] and (datetime.now() - t["ts"]).days <= 7])
         st.metric("Weekly Transactions", recent_tx)
 
-    # Quick actions
     st.subheader("Quick Actions")
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -308,50 +639,39 @@ def show_dashboard(user):
         if st.button("🔄 Refresh Data", use_container_width=True, key="qa_refresh"):
             st.rerun()
 
-    # Portfolio chart (simulated)
     st.subheader("Portfolio Value (Last 30 Days)")
     base_value = total_value * 0.9
     historical_values = seed_price_path(base_value, 30)
-    chart_data = pd.DataFrame(
-        {"Date": pd.date_range(end=datetime.now(), periods=30), "Portfolio Value": historical_values}
-    )
+    chart_data = pd.DataFrame({"Date": pd.date_range(end=datetime.now(), periods=30), "Portfolio Value": historical_values})
     st.line_chart(chart_data.set_index("Date"))
 
-    # Recent activity
     st.subheader("Recent Activity")
     user_activities = []
     for tx in st.session_state.transactions[-10:]:
         if tx["sender_id"] == user["user_id"] or tx["recipient_id"] == user["user_id"]:
             status_icon = "🔄" if tx["status"] == "pending" else "✅" if tx["status"] == "completed" else "❌"
-            user_activities.append(
-                {
-                    "Type": f"{status_icon} Payment",
-                    "Amount": f"-{format_money(tx['amount'])}"
-                    if tx["sender_id"] == user["user_id"]
-                    else f"+{format_money(tx['amount'])}",
-                    "Description": tx["note"],
-                    "Date": tx["ts"].strftime("%Y-%m-%d"),
-                    "Status": tx["status"].title(),
-                }
-            )
+            user_activities.append({
+                "Type": f"{status_icon} Payment",
+                "Amount": f"-{format_money(tx['amount'])}" if tx["sender_id"] == user["user_id"] else f"+{format_money(tx['amount'])}",
+                "Description": tx["note"],
+                "Date": tx["ts"].strftime("%Y-%m-%d"),
+                "Status": tx["status"].title(),
+            })
 
     for order in st.session_state.orders[-5:]:
         if order["user_id"] == user["user_id"]:
-            user_activities.append(
-                {
-                    "Type": f"📊 {order['side'].title()} {order['symbol']}",
-                    "Amount": format_money(order["value"]),
-                    "Description": f"{order['units']:.4f} units @ {format_money(order['fill_price'])}",
-                    "Date": order["ts"].strftime("%Y-%m-%d"),
-                    "Status": order["status"].title(),
-                }
-            )
+            user_activities.append({
+                "Type": f"📊 {order['side'].title()} {order['symbol']}",
+                "Amount": format_money(order["value"]),
+                "Description": f"{order['units']:.4f} units @ {format_money(order['fill_price'])}",
+                "Date": order["ts"].strftime("%Y-%m-%d"),
+                "Status": order["status"].title(),
+            })
 
     if user_activities:
         st.dataframe(pd.DataFrame(user_activities), use_container_width=True)
     else:
         st.info("No recent activity. Start by sending money or making investments!")
-
 
 def show_banking(user):
     st.header("Banking")
@@ -377,7 +697,6 @@ def show_banking(user):
             if amount > user["balance"]:
                 st.error("Insufficient funds")
             else:
-                # Fraud check
                 fake_tx = {"sender_id": user["user_id"], "recipient_id": recipient_id, "amount": amount}
                 warnings = fraud_check(fake_tx)
                 if warnings:
@@ -419,16 +738,12 @@ def show_banking(user):
                     if st.button("Pay", key=f"pay_{req['request_id']}"):
                         ok, _ = send_money(user["user_id"], req["requestor_id"], req["amount"], "Request payment")
                         if ok:
-                            st.session_state.requests = [
-                                r for r in st.session_state.requests if r["request_id"] != req["request_id"]
-                            ]
+                            st.session_state.requests = [r for r in st.session_state.requests if r["request_id"] != req["request_id"]]
                             add_notification(f"✅ Paid request: {format_money(req['amount'])} to {req['requestor_id']}")
                             st.rerun()
                 with c3:
                     if st.button("Decline", key=f"decline_{req['request_id']}"):
-                        st.session_state.requests = [
-                            r for r in st.session_state.requests if r["request_id"] != req["request_id"]
-                        ]
+                        st.session_state.requests = [r for r in st.session_state.requests if r["request_id"] != req["request_id"]]
                         add_notification(f"❌ Declined request: {format_money(req['amount'])} from {req['requestor_id']}")
                         st.rerun()
                 with c4:
@@ -438,11 +753,7 @@ def show_banking(user):
 
     with tab3:
         st.subheader("Transaction History")
-        user_tx = [
-            t
-            for t in st.session_state.transactions
-            if t["sender_id"] == user["user_id"] or t["recipient_id"] == user["user_id"]
-        ]
+        user_tx = [t for t in st.session_state.transactions if t["sender_id"] == user["user_id"] or t["recipient_id"] == user["user_id"]]
 
         if user_tx:
             tx_data = []
@@ -450,25 +761,21 @@ def show_banking(user):
                 tx_type = "Sent" if tx["sender_id"] == user["user_id"] else "Received"
                 amount = -tx["amount"] if tx_type == "Sent" else tx["amount"]
                 status_icon = "🔄" if tx["status"] == "pending" else "✅" if tx["status"] == "completed" else "❌"
-                tx_data.append(
-                    {
-                        "Date": tx["ts"].strftime("%Y-%m-%d %H:%M"),
-                        "Type": f"{status_icon} {tx_type}",
-                        "Amount": format_money(amount),
-                        "Fee": format_money(tx["fee"]),
-                        "Note": tx["note"],
-                        "Status": tx["status"].title(),
-                    }
-                )
+                tx_data.append({
+                    "Date": tx["ts"].strftime("%Y-%m-%d %H:%M"),
+                    "Type": f"{status_icon} {tx_type}",
+                    "Amount": format_money(amount),
+                    "Fee": format_money(tx["fee"]),
+                    "Note": tx["note"],
+                    "Status": tx["status"].title(),
+                })
             st.dataframe(pd.DataFrame(tx_data), use_container_width=True)
         else:
             st.info("No transactions yet. Send or request money to get started!")
 
-
 def show_markets(user):
     st.header("Markets")
 
-    # Quick watchlist action
     if not user["watchlist"]:
         c1, c2 = st.columns([3, 1])
         with c2:
@@ -528,8 +835,7 @@ def show_markets(user):
                         add_notification(f"📉 Removed {symbol} from watchlist")
                         st.rerun()
             with c6:
-                st.write("")  # spacer
-
+                st.write("")
 
 def show_portfolio(user):
     st.header("Portfolio")
@@ -567,21 +873,13 @@ def show_portfolio(user):
         else:
             available_units = float(user["portfolio"].get(symbol, {}).get("units", 0))
             if available_units > 0:
-                units = st.number_input(
-                    "Units",
-                    min_value=0.01,
-                    max_value=available_units,
-                    value=min(1.0, available_units),
-                    step=0.1,
-                    help=f"Available: {available_units:.4f} units",
-                    key="trade_units",
-                )
+                units = st.number_input("Units", min_value=0.01, max_value=available_units, value=min(1.0, available_units), step=0.1, help=f"Available: {available_units:.4f} units", key="trade_units")
             else:
                 st.info("No units available to sell for this symbol.")
                 units = None
             cash_amount = None
     with c4:
-        st.write("")  # Spacer
+        st.write("")
         if st.button("Place Order", type="primary", key="place_order_btn"):
             ok, msg, order = place_order(user["user_id"], symbol, side, cash_amount, units)
             if ok:
@@ -598,116 +896,4 @@ def show_portfolio(user):
         for sym, position in user["portfolio"].items():
             data = get_cached_data(sym, "1d")
             if data:
-                current_price = data["current_price"]
-                value = position["units"] * current_price
-                cost_basis = position["units"] * position["avg_cost"]
-                unrealized_pl = value - cost_basis
-                unrealized_pct = (unrealized_pl / cost_basis) * 100 if cost_basis > 0 else 0
-                rows.append(
-                    {
-                        "Symbol": sym,
-                        "Units": f"{position['units']:.4f}",
-                        "Avg Cost": format_money(position["avg_cost"]),
-                        "Last Price": format_money(current_price),
-                        "Value": format_money(value),
-                        "Unrealized $": format_money(unrealized_pl),
-                        "Unrealized %": f"{unrealized_pct:.2f}%",
-                    }
-                )
-        if rows:
-            st.dataframe(pd.DataFrame(rows), use_container_width=True)
-        else:
-            st.info("Position data temporarily unavailable")
-    else:
-        st.info("No positions yet. Buy stocks or crypto to build your portfolio!")
-
-    st.subheader("Watchlist")
-    if user["watchlist"]:
-        for sym in list(user["watchlist"]):
-            data = get_cached_data(sym, "1d")
-            if data:
-                c1, c2, c3, c4 = st.columns([2, 2, 1, 1])
-                with c1:
-                    st.write(f"**{sym}**")
-                with c2:
-                    st.metric("Price", format_money(data["current_price"]), f"{data['change_percent']:.2f}%")
-                with c3:
-                    if st.button("View", key=f"view_{sym}"):
-                        st.info(f"View {sym} in Markets tab")
-                with c4:
-                    if st.button("Remove", key=f"remove_{sym}"):
-                        user["watchlist"].remove(sym)
-                        add_notification(f"📉 Removed {sym} from watchlist")
-                        st.rerun()
-            else:
-                st.write(f"❌ {sym} - Data unavailable")
-    else:
-        st.info("Watchlist is empty. Add symbols from the Markets tab or use the 'Add Starter Watchlist' button above!")
-
-
-def show_settings(user):
-    st.header("Settings")
-
-    c1, c2 = st.columns(2)
-
-    with c1:
-        st.subheader("Preferences")
-        dark_mode = st.toggle("Dark Mode", value=user["settings"]["dark_mode"], key="pref_dark_mode")
-        if dark_mode != user["settings"]["dark_mode"]:
-            user["settings"]["dark_mode"] = dark_mode
-            toast_success("Preferences updated")
-            add_notification("⚙️ Preferences updated")
-
-    with c2:
-        st.subheader("Price Alerts")
-        symbol = _clean_symbol(st.text_input("Symbol for Alert", value="BTC-USD", key="alert_symbol"))
-        threshold = st.number_input("Alert Threshold ($)", min_value=0.01, value=50000.0, key="alert_threshold")
-
-        if st.button("Set Alert", key="set_alert_btn"):
-            if symbol:
-                user["settings"]["price_alerts"][symbol] = threshold
-                toast_success(f"Alert set for {symbol} at {format_money(threshold)}")
-                add_notification(f"🔔 Price alert set: {symbol} at {format_money(threshold)}")
-            else:
-                st.warning("Enter a valid symbol before setting an alert.")
-
-        if user["settings"]["price_alerts"]:
-            st.write("Current Alerts:")
-            for alert_symbol, alert_threshold in list(user["settings"]["price_alerts"].items()):
-                c3, c4 = st.columns([3, 1])
-                with c3:
-                    st.write(f"{alert_symbol}: {format_money(alert_threshold)}")
-                with c4:
-                    if st.button("Remove", key=f"remove_alert_{alert_symbol}"):
-                        del user["settings"]["price_alerts"][alert_symbol]
-                        add_notification(f"🔕 Price alert removed: {alert_symbol}")
-                        st.rerun()
-
-
-# ----------------------------
-# Entry point
-# ----------------------------
-def main():
-    # Header with logo fallback
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        logo_path = "assets/BB_logo.png"
-        if os.path.exists(logo_path):
-            st.image(logo_path, use_container_width=True)
-        else:
-            st.markdown("<h2 style='text-align:center'>🍞 Break Bread</h2>", unsafe_allow_html=True)
-        st.markdown(
-            "<h3 style='text-align: center; font-size:36px;'><b><i>Break Bread. Build Wealth.</i></b></h3>",
-            unsafe_allow_html=True,
-        )
-
-    # Auth gate
-    if not st.session_state.get("auth_user"):
-        show_login()
-        return
-
-    show_main_app()
-
-
-if __name__ == "__main__":
-    main()
+                current_price = data["current
