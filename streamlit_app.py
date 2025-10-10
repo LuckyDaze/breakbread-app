@@ -982,115 +982,23 @@ def show_login():
                     else:
                         st.error(msg)
 
-def show_main_app():
-    user = get_user(st.session_state.auth_user)
-    if not user:
-        logout()
-        st.rerun()
-
-    with st.sidebar:
-        
-        # Use st.image for the logo instead of HTML img tag
-        st.image("assets/breakbread-logo.png", width=80)
-        
-        st.markdown(f"""
-            </div>
-            <h3 style='color: #000000; margin: 0.5rem 0 0.25rem 0; font-weight: 600;'>{user['app_id']}</h3>
-            <p style='color: #000000; margin: 0; opacity: 0.8; font-size: 0.9rem;'>Break Bread Member</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        nav_options = [
-            ("🏠 Dashboard", "Dashboard"),
-            ("💸 Banking", "Banking"), 
-            ("📈 Markets", "Markets"),
-            ("💼 Portfolio", "Portfolio"),
-            ("⚙️ Settings", "Settings")
-        ]
-        
-        for icon_label, value in nav_options:
-            if st.button(f"**{icon_label}**", 
-                        key=f"nav_{value}", 
-                        use_container_width=True,
-                        type="primary" if st.session_state.get("app_nav_radio") == value else "secondary"):
-                st.session_state.app_nav_radio = value
-                st.rerun()
-
-        # Market Overview
-        st.markdown("---")
-        st.markdown("""
-        <div style='margin: 1rem 0;'>
-            <h4 style='color: #FFFFFF; margin: 0 0 1rem 0; font-weight: 600;'>Market Overview</h4>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        indices = mini_indices()
-        for index in indices[:3]:  # Show first 3 indices
-            change_color = "#00D54B" if index["chg_pct"] >= 0 else "#FF4444"
-            st.markdown(f"""
-            <div style='
-                background-color: #1A1A1A;
-                padding: 1rem;
-                border-radius: 12px;
-                border: 1px solid #333;
-                margin-bottom: 0.5rem;
-            '>
-                <div style='display: flex; justify-content: between; align-items: center;'>
-                    <span style='color: #FFFFFF; font-weight: 500;'>{index['name']}</span>
-                    <div style='text-align: right;'>
-                        <div style='color: #FFFFFF; font-weight: 600;'>{format_money(index['price'])}</div>
-                        <div style='color: {change_color}; font-size: 0.8rem; font-weight: 500;'>{index['chg_pct']:+.2f}%</div>
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        # Logout button
-        st.markdown("---")
-        if st.button("**🚪 Logout**", use_container_width=True, type="secondary"):
-            logout()
-            st.rerun()
-
-    # Main content area based on navigation
-    if st.session_state.get("app_nav_radio") == "Dashboard":
-        show_dashboard(user)
-    elif st.session_state.get("app_nav_radio") == "Banking":
-        show_banking(user)
-    elif st.session_state.get("app_nav_radio") == "Markets":
-        show_markets(user)
-    elif st.session_state.get("app_nav_radio") == "Portfolio":
-        show_portfolio(user)
-    elif st.session_state.get("app_nav_radio") == "Settings":
-        show_settings(user)
-    else:
-        show_dashboard(user)  # Default to dashboard
-def show_dashboard(user):
-    # Header with balance
-    total_balance = portfolio_value(user["user_id"]) + user["balance"]
-    
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
+ # User profile section - FIXED LOGO
         st.markdown(f"""
         <div style='
             background: linear-gradient(135deg, #FE8B00 0%, #FF9A2D 100%);
-            padding: 2.5rem;
-            border-radius: 24px;
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
             text-align: center;
-            margin-bottom: 2rem;
-            box-shadow: 0 8px 32px rgba(254, 139, 0, 0.3);
+            box-shadow: 0 4px 16px rgba(254, 139, 0, 0.3);
         '>
-            <h3 style='color: #000000; margin: 0; font-size: 1.1rem; font-weight: 600; opacity: 0.9;'>TOTAL BALANCE</h3>
-            <h1 style='color: #000000; margin: 1rem 0; font-size: 3rem; font-weight: 700; letter-spacing: -0.02em;'>{format_money(total_balance)}</h1>
             <div style='
-                display: inline-block;
                 background: rgba(0, 0, 0, 0.2);
-                padding: 8px 16px;
-                border-radius: 20px;
-                margin-top: 0.5rem;
+                padding: 12px;
+                border-radius: 12px;
+                display: inline-block;
+                margin-bottom: 0.5rem;
             '>
-                <p style='color: #000000; margin: 0; font-size: 0.9rem; font-weight: 600;'>Break Bread</p>
-            </div>
-        </div>
         """, unsafe_allow_html=True)
 
     # Quick Actions - Break Bread Style
