@@ -2191,7 +2191,7 @@ def main():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         # Display your logo image
-        st.image("assets/breakbread-logo.png", width=300)
+        st.image("assets/breakbread-logo.png", width=1024)
         st.markdown("<h3 style='text-align: center; font-size:36px;'><b><i>Break Bread. Build Wealth.</i></b></h3>", unsafe_allow_html=True)
 
     # Auth gate
