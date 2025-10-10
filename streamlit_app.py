@@ -50,6 +50,18 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
     
+    [data-testid="stMetricValue"] {
+        color: var(--bb-white) !important;
+    }
+    
+    [data-testid="stMetricLabel"] {
+        color: var(--bb-text-secondary) !important;
+    }
+    
+    [data-testid="stMetricDelta"] {
+        color: inherit !important;
+    }
+    
     /* Buttons */
     .stButton button {
         background-color: var(--bb-orange) !important;
@@ -174,6 +186,16 @@ st.markdown("""
         color: var(--bb-black) !important;
         border-radius: 8px;
     }
+    
+    /* Fix text colors */
+    .stText, .stMarkdown, p, div, span {
+        color: var(--bb-white) !important;
+    }
+    
+    /* Fix selectbox text */
+    .stSelectbox div[data-baseweb="select"] div {
+        color: var(--bb-white) !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -182,10 +204,11 @@ st.markdown("""
 # ----------------------------
 st.set_page_config(
     page_title="Break Bread",
-    page_icon="assets/favicon.png",  # Changed from "🍞"
+    page_icon="🍞",  # Using emoji as fallback
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
 # ----------------------------
 # Utility Functions
 # ----------------------------
@@ -836,6 +859,13 @@ def _clean_symbol(text: str) -> str:
     return (text or "").strip().upper()
 
 def show_login():
+    # ADDED LOGO CODE HERE - This is the right place for it
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        # Display your logo image
+        st.image("assets/breakbread-logo.png", width=512)  # Reduced width for better fit
+        st.markdown("<h3 style='text-align: center; font-size:36px;'><b><i>Break Bread. Build Wealth.</i></b></h3>", unsafe_allow_html=True)
+    
     st.header("Welcome to Break Bread")
 
     tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
@@ -1054,6 +1084,21 @@ def show_main_app():
         if st.button("**🚪 Logout**", use_container_width=True, type="secondary"):
             logout()
             st.rerun()
+
+    # Main content area based on navigation
+    if st.session_state.get("app_nav_radio") == "Dashboard":
+        show_dashboard(user)
+    elif st.session_state.get("app_nav_radio") == "Banking":
+        show_banking(user)
+    elif st.session_state.get("app_nav_radio") == "Markets":
+        show_markets(user)
+    elif st.session_state.get("app_nav_radio") == "Portfolio":
+        show_portfolio(user)
+    elif st.session_state.get("app_nav_radio") == "Settings":
+        show_settings(user)
+    else:
+        show_dashboard(user)  # Default to dashboard
+
 def show_dashboard(user):
     # Header with balance
     total_balance = portfolio_value(user["user_id"]) + user["balance"]
@@ -1196,8 +1241,40 @@ def show_dashboard(user):
         </div>
         """, unsafe_allow_html=True)
 
+    # Recent Activity
+    st.markdown("""
+    <div style='margin: 2rem 0 1rem 0;'>
+        <h3 style='color: #FFFFFF; margin-bottom: 1rem;'>Recent Activity</h3>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Get recent transactions for this user
+    user_activities = []
+    recent_transactions = [t for t in st.session_state.transactions 
+                          if t["sender_id"] == user["user_id"] or t["recipient_id"] == user["user_id"]]
+    recent_transactions.sort(key=lambda x: x["ts"], reverse=True)
+    
+    for tx in recent_transactions[:5]:  # Show last 5 transactions
+        if tx["sender_id"] == user["user_id"]:
+            activity_type = "Sent"
+            amount = f"-{format_money(tx['amount'])}"
+            color = "#FF4444"
+        else:
+            activity_type = "Received" 
+            amount = f"+{format_money(tx['amount'])}"
+            color = "#00D54B"
+        
+        user_activities.append({
+            "Type": activity_type,
+            "Amount": amount,
+            "Date": tx["ts"].strftime("%m/%d/%Y"),
+            "Note": tx.get("note", "")
+        })
+
     if user_activities:
-        st.dataframe(pd.DataFrame(user_activities), use_container_width=True)
+        # Create a styled dataframe
+        df = pd.DataFrame(user_activities)
+        st.dataframe(df, use_container_width=True)
     else:
         st.info("No recent activity. Start by sending money or making investments!")
 
@@ -1223,11 +1300,97 @@ def show_banking(user):
             ok, _ = simulate_paycheck(user["user_id"])
             if ok:
                 toast_success("💰 $2,000 added to your balance!")
+                st.rerun()
 
     # Tabs with Break Bread styling
     tab1, tab2, tab3 = st.tabs(["💸 **Send**", "📥 **Request**", "📊 **History**"])
     
-    # Rest of your banking code remains the same, but will inherit the new styling
+    with tab1:
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("Send Money")
+            recipient = st.text_input("Recipient (Username or Email)", key="send_recipient")
+            amount = st.number_input("Amount ($)", min_value=0.01, value=10.0, key="send_amount")
+            note = st.text_input("Note (Optional)", key="send_note")
+            
+            if st.button("Send Payment", type="primary", key="send_btn"):
+                if not recipient:
+                    st.error("Please enter a recipient")
+                elif amount > user["balance"]:
+                    st.error("Insufficient funds")
+                else:
+                    ok, msg = send_money(user["user_id"], recipient, amount, note)
+                    if ok:
+                        toast_success(msg)
+                        add_notification(f"💸 Sent {format_money(amount)} to {recipient}")
+                        st.rerun()
+                    else:
+                        st.error(msg)
+        
+        with col2:
+            st.subheader("Quick Send")
+            demo_users = [u for u in st.session_state.users.values() if u["user_id"] != user["user_id"]]
+            for demo_user in demo_users[:2]:
+                if st.button(f"Send $10 to {demo_user['app_id']}", key=f"quick_send_{demo_user['user_id']}"):
+                    ok, msg = send_money(user["user_id"], demo_user["app_id"], 10.0, "Quick send")
+                    if ok:
+                        toast_success(f"Sent $10 to {demo_user['app_id']}")
+                        st.rerun()
+                    else:
+                        st.error(msg)
+    
+    with tab2:
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("Request Money")
+            request_recipient = st.text_input("From (Username or Email)", key="request_recipient")
+            request_amount = st.number_input("Amount ($)", min_value=0.01, value=10.0, key="request_amount")
+            request_note = st.text_input("Note", key="request_note", value="Can you send me some money?")
+            
+            if st.button("Send Request", type="primary", key="request_btn"):
+                if not request_recipient:
+                    st.error("Please enter a recipient")
+                else:
+                    ok, msg = request_money(user["user_id"], request_recipient, request_amount, request_note)
+                    if ok:
+                        toast_success(msg)
+                        st.rerun()
+                    else:
+                        st.error(msg)
+    
+    with tab3:
+        st.subheader("Transaction History")
+        # Show user's transactions
+        user_transactions = [t for t in st.session_state.transactions 
+                           if t["sender_id"] == user["user_id"] or t["recipient_id"] == user["user_id"]]
+        user_transactions.sort(key=lambda x: x["ts"], reverse=True)
+        
+        if user_transactions:
+            transaction_data = []
+            for tx in user_transactions:
+                if tx["sender_id"] == user["user_id"]:
+                    direction = "Sent"
+                    amount = f"-{format_money(tx['amount'])}"
+                    counterparty = get_user(tx["recipient_id"])["app_id"]
+                else:
+                    direction = "Received"
+                    amount = f"+{format_money(tx['amount'])}"
+                    counterparty = get_user(tx["sender_id"])["app_id"]
+                
+                transaction_data.append({
+                    "Date": tx["ts"].strftime("%Y-%m-%d %H:%M"),
+                    "Type": direction,
+                    "Counterparty": counterparty,
+                    "Amount": amount,
+                    "Note": tx.get("note", "")
+                })
+            
+            st.dataframe(pd.DataFrame(transaction_data), use_container_width=True)
+        else:
+            st.info("No transactions yet. Send or request money to get started!")
+
+# ... (rest of your existing functions remain the same - show_markets, show_portfolio, show_settings, etc.)
+
 def show_stocks_etfs():
     st.subheader("📊 Stocks & ETFs")
     
@@ -1716,6 +1879,7 @@ def show_universal_research():
                     st.plotly_chart(fig, use_container_width=True)
         else:
             st.error(f"Could not fetch data for {symbol}. Try a different symbol.")
+
 def show_markets(user):
     st.header("📈 Multi-Asset Markets")
     
@@ -1762,503 +1926,6 @@ def show_markets(user):
     # Universal research tool
     st.markdown("---")
     show_universal_research()
-
-# New Treasury Bonds Tab
-def show_treasury_bonds():
-    st.subheader("🇺🇸 U.S. Treasury Bonds")
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.markdown("""
-        ### About Treasury Bonds
-        U.S. Treasury bonds are debt securities issued by the federal government 
-        to finance government spending. They are considered among the safest investments 
-        because they are backed by the full faith and credit of the U.S. government.
-        
-        **Key Features:**
-        - Backed by U.S. government
-        - Tax advantages (exempt from state/local taxes)
-        - Various maturities (4 weeks to 30 years)
-        - Regular interest payments
-        """)
-        
-        # Current Treasury Rates
-        st.subheader("Current Treasury Rates")
-        treasury_data = get_treasury_yields()
-        if treasury_data:
-            t1, t2, t3 = st.columns(3)
-            with t1:
-                st.metric("4-Week Bill", f"{treasury_data.get('4_week', 5.25):.2f}%")
-            with t2:
-                st.metric("2-Year Note", f"{treasury_data.get('2_year', 4.89):.2f}%")
-            with t3:
-                st.metric("10-Year Bond", f"{treasury_data.get('10_year', 4.45):.2f}%")
-    
-    with col2:
-        st.markdown("### How to Invest")
-        st.info("""
-        **TreasuryDirect.gov**
-        - Direct purchase from U.S. Treasury
-        - No fees or commissions
-        - Minimum investment: $100
-        - Automatic reinvestment available
-        """)
-        
-        if st.button("🪙 Visit TreasuryDirect", use_container_width=True):
-            st.markdown("[Open TreasuryDirect.gov](https://www.treasurydirect.gov/)")
-        
-        st.markdown("### Investment Options")
-        st.write("""
-        - **Treasury Bills**: 4 weeks to 1 year
-        - **Treasury Notes**: 2 to 10 years  
-        - **Treasury Bonds**: 20 to 30 years
-        - **TIPS**: Inflation-protected
-        - **Floating Rate Notes**: Variable interest
-        """)
-
-# New Precious Metals Tab
-def show_precious_metals():
-    st.subheader("🥇 Precious Metals Investing")
-    
-    # Current Metals Prices
-    metals_data = get_metals_prices()
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.markdown("""
-        ### Why Invest in Precious Metals?
-        Precious metals can provide portfolio diversification and act as a hedge 
-        against inflation and economic uncertainty.
-        
-        **Common Investment Options:**
-        - Physical bullion (coins, bars)
-        - ETFs and mutual funds
-        - Mining company stocks
-        - Futures and options
-        """)
-        
-        # Current Prices
-        st.subheader("Current Spot Prices")
-        if metals_data:
-            m1, m2, m3 = st.columns(3)
-            with m1:
-                if 'gold' in metals_data:
-                    st.metric("Gold", f"${metals_data['gold']['price']:,.2f}/oz")
-            with m2:
-                if 'silver' in metals_data:
-                    st.metric("Silver", f"${metals_data['silver']['price']:,.2f}/oz")
-            with m3:
-                if 'platinum' in metals_data:
-                    st.metric("Platinum", f"${metals_data['platinum']['price']:,.2f}/oz")
-    
-    with col2:
-        st.markdown("### Trusted Platforms")
-        
-        st.info("""
-        **APMEX** - Largest online precious metals dealer
-        - Huge selection of coins and bars
-        - Competitive pricing
-        - Secure storage options
-        """)
-        
-        if st.button("🪙 Visit APMEX", use_container_width=True):
-            st.markdown("[Open APMEX.com](https://www.apmex.com/)")
-        
-        st.markdown("### Learning Resources")
-        if st.button("📚 APMEX Learning Center", use_container_width=True):
-            st.markdown("[Open APMEX Learning Center](https://learn.apmex.com/)")
-
-# New Startup Investing Tab
-def show_startup_investing():
-    st.subheader("🚀 Startup & Equity Crowdfunding")
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.markdown("""
-        ### Invest in Innovation
-        Equity crowdfunding allows everyday investors to buy shares in startups 
-        and early-stage companies.
-        
-        **SEC Regulations:**
-        - Non-accredited investors can participate
-        - Investment limits based on income/net worth
-        - 12-month limit: 5-10% of income/net worth
-        - Platforms must be SEC-registered
-        """)
-        
-        st.warning("""
-        **High Risk Warning:** Startup investing is speculative and carries 
-        substantial risk of loss. Most startups fail. Only invest money 
-        you can afford to lose completely.
-        """)
-        
-        # Investment Limits Info
-        st.subheader("Investment Limits")
-        st.write("""
-        **Based on annual income/net worth:**
-        - If either is < $124,000: **$2,500** or 5% of greater amount
-        - If both are ≥ $124,000: **$124,000** or 10% of annual income/net worth
-        - Maximum across all platforms: **$124,000** per year
-        """)
-    
-    with col2:
-        st.markdown("### Leading Platforms")
-        
-        platforms = [
-            ("Wefunder", "https://wefunder.com/", "Community-focused, diverse startups"),
-            ("StartEngine", "https://www.startengine.com/explore", "Tech and innovation focus"),
-            ("Republic", "https://republic.com/", "Curated selection, various sectors"),
-            ("AngelList", "https://venture.angellist.com/v/start-investing", "VC-backed startups")
-        ]
-        
-        for name, url, description in platforms:
-            st.info(f"**{name}**\n\n{description}")
-            if st.button(f"Visit {name}", key=f"btn_{name}"):
-                st.markdown(f"[Open {name}]({url})")
-        
-        st.markdown("### Resources")
-        if st.button("📊 SEC Crowdfunding Guide", use_container_width=True):
-            st.markdown("[Open SEC Guide](https://www.sec.gov/oiea/investor-alerts-bulletins/ib_crowdfunding-.html)")
-        
-        if st.button("📈 Forbes Startup Guide", use_container_width=True):
-            st.markdown("[Open Forbes Guide](https://www.forbes.com/advisor/investing/invest-in-startups/)")
-
-# New Business Marketplace Tab
-def show_business_marketplace():
-    st.subheader("🏢 Business Acquisition Marketplace")
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.markdown("""
-        ### Buy an Established Business
-        Acquiring an existing business can provide immediate cash flow, 
-        established operations, and proven business models.
-        
-        **Advantages vs Startups:**
-        - Existing customer base
-        - Proven revenue streams
-        - Established systems and processes
-        - Historical financial data
-        - Trained employees
-        """)
-        
-        st.subheader("Business Types Available")
-        st.write("""
-        - **Main Street Businesses**: $100K - $5M valuation
-        - **Small Manufacturing**: $1M - $10M revenue
-        - **Service Businesses**: Consulting, agencies, contractors
-        - **Franchises**: Brand recognition with support
-        - **E-commerce**: Online stores with established traffic
-        """)
-    
-    with col2:
-        st.markdown("### Marketplace Platform")
-        
-        st.info("""
-        **BizBuySell** - Largest business marketplace
-        - 45,000+ businesses for sale
-        - All industries and price ranges
-        - Confidential listing process
-        - Business valuation tools
-        """)
-        
-        if st.button("🏢 Browse Businesses", use_container_width=True):
-            st.markdown("[Open BizBuySell](https://www.bizbuysell.com/)")
-        
-        st.markdown("### Due Diligence Checklist")
-        st.write("""
-        ✅ Financial records (3+ years)
-        ✅ Customer concentration
-        ✅ Market position & competition
-        ✅ Legal and compliance status
-        ✅ Employee and supplier contracts
-        ✅ Physical assets condition
-        """)
-
-# New Royalty Investing Tab
-def show_royalty_investing():
-    st.subheader("🎵 Royalty & Intellectual Property Investing")
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.markdown("""
-        ### Invest in Royalties
-        Royalty investing allows you to earn income from intellectual property 
-        like music, patents, film rights, and trademarks.
-        
-        **How It Works:**
-        - Purchase a share of future royalty streams
-        - Receive regular income payments
-        - No active management required
-        - Diversification from traditional assets
-        """)
-        
-        st.subheader("Royalty Types")
-        st.write("""
-        - **Music Royalties**: Songwriting, publishing, master recordings
-        - **Patent Royalties**: Technology, pharmaceuticals, inventions  
-        - **Film & TV Royalties**: Streaming rights, syndication
-        - **Mineral Royalties**: Oil, gas, mining rights
-        - **Brand Royalties**: Trademarks, franchising
-        """)
-        
-        # Example Royalty Returns
-        st.subheader("Typical Returns")
-        returns_data = {
-            "Music Catalogs": "8-12%",
-            "Patent Portfolios": "12-20%", 
-            "Film Libraries": "6-10%",
-            "Mineral Rights": "8-15%"
-        }
-        
-        for asset_type, returns in returns_data.items():
-            st.write(f"**{asset_type}**: {returns}")
-    
-    with col2:
-        st.markdown("### Platform Access")
-        
-        st.info("""
-        **Royalty Exchange** - Leading royalty marketplace
-        - Vetted royalty offerings
-        - Transparent bidding process
-        - Secondary market liquidity
-        - Professional due diligence
-        """)
-        
-        if st.button("🎵 Browse Royalties", use_container_width=True):
-            st.markdown("[Open Royalty Exchange](https://www.royaltyexchange.com/)")
-        
-        st.markdown("### Investment Considerations")
-        st.write("""
-        **Pros:**
-        - Passive income streams
-        - Portfolio diversification
-        - Inflation hedging potential
-        - Non-correlated returns
-        
-        **Cons:**
-        - Limited liquidity
-        - Complex valuation
-        - Industry-specific risks
-        - Due diligence intensive
-        """)
-
-# New Municipal Bonds Tab
-def show_municipal_bonds():
-    st.subheader("🏛️ Municipal Bonds")
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.markdown("""
-        ### Invest in Local Communities
-        Municipal bonds are debt securities issued by state and local governments 
-        to fund public projects like schools, roads, and infrastructure.
-        
-        **Key Benefits:**
-        - Tax-free interest (federal and often state)
-        - Generally high credit quality
-        - Regular interest payments
-        - Support community development
-        """)
-        
-        st.subheader("Municipal Bond Types")
-        st.write("""
-        - **General Obligation (GO) Bonds**: Backed by taxing power
-        - **Revenue Bonds**: Backed by project revenues  
-        - **Taxable Munis**: For certain projects, taxable interest
-        - **Zero-Coupon Munis**: Purchased at discount, no regular interest
-        - **Build America Bonds**: Federal subsidy for infrastructure
-        """)
-    
-    with col2:
-        st.markdown("### Market Access")
-        
-        st.info("""
-        **MunicipalBonds.com** - Comprehensive muni platform
-        - Real-time bond pricing
-        - Credit analysis tools
-        - Tax-equivalent yield calculator
-        - Educational resources
-        """)
-        
-        if st.button("🏛️ Browse Muni Bonds", use_container_width=True):
-            st.markdown("[Open MunicipalBonds.com](https://www.municipalbonds.com/)")
-        
-        st.markdown("### Risk Assessment")
-        st.write("""
-        **Credit Risks:**
-        - Issuer financial health
-        - Economic conditions
-        - Tax base stability
-        - Project viability
-        
-        **Market Risks:**
-        - Interest rate changes
-        - Inflation expectations
-        - Liquidity constraints
-        - Call provisions
-        """)
-        
-        st.markdown("### Resources")
-        if st.button("📚 Learn About Muni Bonds", use_container_width=True):
-            st.markdown("[Open Investopedia Guide](https://www.investopedia.com/terms/m/municipalbond.asp)")
-
-# Update the existing bonds tab to focus on government bonds
-def show_bonds_treasuries():
-    st.subheader("📋 Government Bonds & Fixed Income")
-    
-    treasury_data = get_treasury_yields()
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.markdown("""
-        ### Fixed Income Overview
-        Government bonds provide stable income with varying levels of risk 
-        and return profiles across different maturities.
-        """)
-        
-        # Current Yields
-        st.subheader("Current Government Yields")
-        if treasury_data:
-            t1, t2, t3 = st.columns(3)
-            with t1:
-                st.metric("1-Month Treasury", f"{treasury_data['1_month']:.2f}%")
-            with t2:
-                st.metric("2-Year Treasury", f"{treasury_data['2_year']:.2f}%")
-            with t3:
-                st.metric("10-Year Treasury", f"{treasury_data['10_year']:.2f}%")
-            
-            st.caption(f"Source: {treasury_data['source']} | Updated: {treasury_data['last_updated']}")
-    
-    with col2:
-        st.markdown("### Quick Access")
-        st.write("""
-        **Explore More:**
-        - **Treasury Bonds** → Full government bond access
-        - **Municipal Bonds** → Tax-advantaged local bonds
-        - **Corporate Bonds** → Higher yields (coming soon)
-        """)
-        
-        st.info("""
-        **Yield Curve Insight:**
-        Monitor the relationship between short and long-term rates for economic signals.
-        """)
-
-def show_crypto_assets():
-    st.subheader("₿ Cryptocurrencies")
-    
-    crypto_data = get_crypto_prices()
-    cols = st.columns(len(crypto_data))
-    
-    for i, crypto in enumerate(crypto_data):
-        with cols[i]:
-            st.metric(
-                label=crypto['symbol'],
-                value=f"${crypto['current_price']:,.2f}",
-                delta=f"{crypto['change_percent']:+.2f}%"
-            )
-            st.caption(f"Source: {crypto['source']}")
-
-    # Historical chart for Bitcoin
-    st.write("**Bitcoin - 7 Day History**")
-    btc_data = get_crypto_data('bitcoin', 7)
-    if btc_data and btc_data['historical'] is not None:
-        fig = create_price_chart(btc_data['historical'], "Bitcoin (7 Days)")
-        if fig:
-            st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("Historical data temporarily unavailable")
-
-def show_bonds_treasuries():
-    st.subheader("📋 Bonds & Treasuries")
-    
-    treasury_data = get_treasury_yields()
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("1-Month Treasury", f"{treasury_data['1_month']:.2f}%")
-    with col2:
-        st.metric("2-Year Treasury", f"{treasury_data['2_year']:.2f}%")
-    with col3:
-        st.metric("10-Year Treasury", f"{treasury_data['10_year']:.2f}%")
-    
-    st.caption(f"Source: {treasury_data['source']} | Updated: {treasury_data['last_updated']}")
-
-def show_alternative_investments():
-    st.subheader("💎 Alternative Investments")
-    
-    # Precious Metals
-    metals_data = get_metals_prices()
-    st.write("**Precious Metals**")
-    m1, m2, m3 = st.columns(3)
-    with m1:
-        if 'gold' in metals_data:
-            st.metric("Gold (oz)", f"${metals_data['gold']['price']:,.2f}")
-    with m2:
-        if 'silver' in metals_data:
-            st.metric("Silver (oz)", f"${metals_data['silver']['price']:,.2f}")
-    with m3:
-        if 'platinum' in metals_data:
-            st.metric("Platinum (oz)", f"${metals_data['platinum']['price']:,.2f}")
-    
-    if metals_data and 'gold' in metals_data:
-        st.caption(f"Source: {metals_data['gold']['source']}")
-
-def show_universal_research():
-    st.subheader("🔍 Universal Research Tool")
-    
-    col1, col2, col3 = st.columns([2, 1, 1])
-    
-    with col1:
-        symbol = st.text_input(
-            "Research Any Asset", 
-            value="AAPL",
-            placeholder="AAPL, BTC-USD, GC=F, etc.",
-            key="universal_research"
-        )
-    
-    with col2:
-        period = st.selectbox("Period", ["1d", "1wk", "1mo", "3mo", "1y"], key="research_period")
-    
-    with col3:
-        st.write("")  # Spacer
-        if st.button("Research Asset", type="primary"):
-            st.session_state.research_symbol = symbol
-            st.rerun()
-    
-    # Research results
-    if hasattr(st.session_state, 'research_symbol'):
-        symbol = st.session_state.research_symbol
-        data = get_stock_data(symbol, period)
-        
-        if data:
-            # Display metrics
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
-                st.metric("Current Price", f"${data['current_price']:,.2f}")
-            with col2:
-                st.metric("Change", f"${data['change']:+.2f}")
-            with col3:
-                st.metric("Change %", f"{data['change_percent']:+.2f}%")
-            with col4:
-                st.metric("52W Range", f"${data['52w_low']:.0f}-${data['52w_high']:.0f}")
-            
-            st.caption(f"Data Source: {data['source']} | Last Updated: {data['last_updated'].strftime('%Y-%m-%d %H:%M')}")
-            
-            # Historical chart
-            if not data['historical'].empty:
-                fig = create_price_chart(data['historical'], f"{symbol} Price History")
-                if fig:
-                    st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.error(f"Could not fetch data for {symbol}. Try a different symbol.")
 
 def show_portfolio(user):
     st.header("Portfolio")
@@ -2410,57 +2077,12 @@ def main():
     # Initialize demo users
     ensure_demo_users()
     
-    # Break Bread Inspired Header
-    st.markdown("""
-    <div style='
-        background: linear-gradient(135deg, #000000 0%, #111111 100%);
-        padding: 3rem 0 2rem 0;
-        margin: -2rem -1rem 2rem -1rem;
-        border-bottom: 1px solid #333;
-    '>
-        <div style='
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 1rem;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        '>
-            <div style='
-                background: linear-gradient(135deg, #FE8B00 0%, #FF9A2D 100%);
-                padding: 12px;
-                border-radius: 16px;
-                box-shadow: 0 8px 24px rgba(254, 139, 0, 0.3);
-            '>
-                <img src="https://breakbread-app-2yphdh8ckmnctashqklne5.streamlit.app/favicon.ico" width="40" style='border-radius: 8px;'>
-            </div>
-            <div>
-                <h1 style='
-                    color: #FE8B00;
-                    margin: 0;
-                    font-size: 2.8rem;
-                    font-weight: 700;
-                    letter-spacing: -0.02em;
-                    background: linear-gradient(135deg, #FE8B00 0%, #FF9A2D 100%);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    background-clip: text;
-                '>Break Bread</h1>
-                <p style='
-                    color: #888888;
-                    margin: 0;
-                    font-size: 1.1rem;
-                    font-weight: 500;
-                '>Build Wealth Together</p>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
     # Auth gate
     if not st.session_state.get("auth_user"):
         show_login()
         return
 
     show_main_app()
+
+if __name__ == "__main__":
+    main()
