@@ -6,17 +6,17 @@ import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 import yfinance as yf
+import requests
 
 # ----------------------------
 # Page configuration
 # ----------------------------
 st.set_page_config(
     page_title="Break Bread",
-    page_icon="assets/favicon.png",
+    page_icon="assets/favicon.png",  # Changed from "🍞"
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
 # ----------------------------
 # Utility Functions
 # ----------------------------
@@ -39,6 +39,300 @@ def seed_price_path(base_value, days, volatility=0.02):
         new_price = prices[-1] * (1 + change)
         prices.append(new_price)
     return prices
+
+# ----------------------------
+# Enhanced Market Data Functions
+# ----------------------------
+def get_stock_data(symbol, period="1mo"):
+    """Fetch stock/ETF data with historical prices."""
+    try:
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period=period)
+        
+        if hist.empty:
+            return None
+            
+        info = ticker.info
+        current_price = hist['Close'].iloc[-1]
+        
+        # Calculate change from previous close
+        if len(hist) > 1:
+            prev_price = hist['Close'].iloc[-2]
+            change = current_price - prev_price
+            change_percent = (change / prev_price) * 100
+        else:
+            change = 0
+            change_percent = 0
+        
+        return {
+            'symbol': symbol,
+            'current_price': current_price,
+            'change': change,
+            'change_percent': change_percent,
+            'historical': hist,
+            '52w_high': info.get('fiftyTwoWeekHigh', current_price * 1.2),
+            '52w_low': info.get('fiftyTwoWeekLow', current_price * 0.8),
+            'volume': hist['Volume'].iloc[-1] if 'Volume' in hist.columns else 0,
+            'source': 'Yahoo Finance',
+            'last_updated': datetime.now()
+        }
+    except Exception as e:
+        return None
+
+def get_major_indices():
+    """Get all major indices in one call."""
+    indices = {
+        '^GSPC': 'S&P 500',
+        '^IXIC': 'NASDAQ', 
+        '^DJI': 'Dow Jones',
+        '^RUT': 'Russell 2000'
+    }
+    
+    results = []
+    for symbol, name in indices.items():
+        data = get_stock_data(symbol, '1d')
+        if data:
+            results.append({
+                'name': name,
+                'symbol': symbol,
+                'price': data['current_price'],
+                'change': data['change'],
+                'change_percent': data['change_percent'],
+                'source': data['source']
+            })
+        else:
+            # Fallback data
+            base_prices = {
+                'S&P 500': 5000 + random.randint(-100, 100),
+                'NASDAQ': 16000 + random.randint(-200, 200),
+                'Dow Jones': 38000 + random.randint(-300, 300),
+                'Russell 2000': 2000 + random.randint(-50, 50)
+            }
+            results.append({
+                'name': name,
+                'symbol': symbol,
+                'price': base_prices[name],
+                'change': random.uniform(-50, 50),
+                'change_percent': random.uniform(-2, 2),
+                'source': 'Yahoo Finance (Demo)'
+            })
+    
+    return results
+
+def get_treasury_yields():
+    """Fetch latest Treasury yields with historical context."""
+    try:
+        url = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/avg_interest_rates"
+        params = {
+            'filter': 'security_desc:eq:Treasury Notes',
+            'sort': '-record_date',
+            'page[size]': '5'
+        }
+        
+        response = requests.get(url, params=params, timeout=10)
+        data = response.json()
+        
+        if 'data' in data and data['data']:
+            latest = data['data'][0]
+            base_rate = float(latest.get('avg_interest_rate_amt', 4.5))
+            
+            return {
+                '1_month': base_rate,
+                '2_year': base_rate + 0.4,
+                '10_year': base_rate + 1.0,
+                'source': 'U.S. Treasury FiscalData API',
+                'last_updated': datetime.now().strftime('%Y-%m-%d')
+            }
+        else:
+            return get_treasury_demo_data()
+            
+    except Exception as e:
+        return get_treasury_demo_data()
+
+def get_treasury_demo_data():
+    """Fallback demo data for Treasury yields."""
+    return {
+        '1_month': 5.32,
+        '2_year': 4.89,
+        '10_year': 4.45,
+        'source': 'U.S. Treasury (Demo Data)',
+        'last_updated': datetime.now().strftime('%Y-%m-%d')
+    }
+
+def get_crypto_data(coin_id="bitcoin", days=30):
+    """Fetch cryptocurrency data with historical prices."""
+    try:
+        # Current price and market data
+        price_url = "https://api.coingecko.com/api/v3/simple/price"
+        price_params = {
+            "ids": coin_id,
+            "vs_currencies": "usd",
+            "include_24hr_change": "true"
+        }
+        
+        response = requests.get(price_url, params=price_params, timeout=10)
+        
+        if response.status_code == 200:
+            price_data = response.json()[coin_id]
+            
+            # Get historical data from Yahoo Finance as fallback
+            symbol_map = {
+                'bitcoin': 'BTC-USD',
+                'ethereum': 'ETH-USD'
+            }
+            yahoo_symbol = symbol_map.get(coin_id, 'BTC-USD')
+            ticker = yf.Ticker(yahoo_symbol)
+            hist = ticker.history(period=f"{days}d")
+            
+            return {
+                'symbol': coin_id.upper(),
+                'current_price': price_data['usd'],
+                'change_percent': price_data.get('usd_24h_change', 0),
+                'historical': hist,
+                'source': 'CoinGecko API + Yahoo Finance',
+                'last_updated': datetime.now()
+            }
+        else:
+            return get_crypto_demo_data(coin_id, days)
+            
+    except Exception as e:
+        return get_crypto_demo_data(coin_id, days)
+
+def get_crypto_prices():
+    """Get multiple cryptocurrency prices quickly."""
+    coins = ['bitcoin', 'ethereum']
+    results = []
+    
+    for coin in coins:
+        data = get_crypto_data(coin, 1)
+        if data:
+            symbol_map = {
+                'bitcoin': 'BTC-USD',
+                'ethereum': 'ETH-USD'
+            }
+            data['symbol'] = symbol_map.get(coin, coin.upper())
+            results.append(data)
+    
+    return results
+
+def get_crypto_demo_data(coin_id="bitcoin", days=30):
+    """Fallback demo data for cryptocurrencies."""
+    base_prices = {
+        'bitcoin': 51234.56,
+        'ethereum': 2890.12
+    }
+    
+    base_price = base_prices.get(coin_id, 1000)
+    
+    # Generate historical data using yfinance as fallback
+    symbol_map = {
+        'bitcoin': 'BTC-USD',
+        'ethereum': 'ETH-USD'
+    }
+    yahoo_symbol = symbol_map.get(coin_id, 'BTC-USD')
+    
+    try:
+        ticker = yf.Ticker(yahoo_symbol)
+        hist = ticker.history(period=f"{days}d")
+        if not hist.empty:
+            current_price = hist['Close'].iloc[-1]
+            prev_price = hist['Close'].iloc[-2] if len(hist) > 1 else current_price
+            change_percent = ((current_price - prev_price) / prev_price) * 100
+        else:
+            current_price = base_price
+            change_percent = random.uniform(-5, 5)
+            hist = None
+    except:
+        current_price = base_price
+        change_percent = random.uniform(-5, 5)
+        hist = None
+    
+    return {
+        'symbol': symbol_map.get(coin_id, coin_id.upper()),
+        'current_price': current_price,
+        'change_percent': change_percent,
+        'historical': hist,
+        'source': 'Demo Data',
+        'last_updated': datetime.now()
+    }
+
+def get_metals_prices():
+    """Get precious metals prices."""
+    try:
+        # Try Yahoo Finance for metals
+        metals = {
+            'GC=F': {'name': 'Gold', 'demo_price': 1987.65},
+            'SI=F': {'name': 'Silver', 'demo_price': 23.45},
+            'PL=F': {'name': 'Platinum', 'demo_price': 987.32}
+        }
+        
+        results = {}
+        for symbol, info in metals.items():
+            try:
+                ticker = yf.Ticker(symbol)
+                hist = ticker.history(period="1d")
+                if not hist.empty:
+                    price = hist['Close'].iloc[-1]
+                    source = 'Yahoo Finance'
+                else:
+                    price = info['demo_price']
+                    source = 'Demo Data'
+            except:
+                price = info['demo_price']
+                source = 'Demo Data'
+            
+            results[info['name'].lower()] = {
+                'price': price,
+                'source': source,
+                'last_updated': datetime.now()
+            }
+        
+        return results
+        
+    except Exception as e:
+        # Fallback to demo data
+        return {
+            'gold': {'price': 1987.65, 'source': 'Demo Data', 'last_updated': datetime.now()},
+            'silver': {'price': 23.45, 'source': 'Demo Data', 'last_updated': datetime.now()},
+            'platinum': {'price': 987.32, 'source': 'Demo Data', 'last_updated': datetime.now()}
+        }
+
+def create_price_chart(historical_data, title, chart_type="line"):
+    """Create a Plotly chart from historical data."""
+    if historical_data is None or historical_data.empty:
+        return None
+        
+    fig = go.Figure()
+    
+    if chart_type == "candlestick" and all(col in historical_data.columns for col in ['Open', 'High', 'Low', 'Close']):
+        fig.add_trace(go.Candlestick(
+            x=historical_data.index,
+            open=historical_data['Open'],
+            high=historical_data['High'],
+            low=historical_data['Low'],
+            close=historical_data['Close'],
+            name=title
+        ))
+    else:
+        # Line chart for simple close prices
+        fig.add_trace(go.Scatter(
+            x=historical_data.index,
+            y=historical_data['Close'],
+            mode='lines',
+            name=title,
+            line=dict(color='#1f77b4')
+        ))
+    
+    fig.update_layout(
+        title=title,
+        xaxis_title="Date",
+        yaxis_title="Price ($)",
+        height=400,
+        template="plotly_white",
+        showlegend=False
+    )
+    
+    return fig
 
 # ----------------------------
 # Initialize session state
@@ -209,86 +503,24 @@ def register_user(app_id, email, password, personal, banking, initial_deposit):
 
 def get_cached_data(symbol, period="1mo"):
     """Get market data with caching."""
-    try:
-        ticker = yf.Ticker(symbol)
-        hist = ticker.history(period=period)
-        if hist.empty:
-            return None
-            
-        info = ticker.info
-        current_price = hist['Close'].iloc[-1]
-        prev_price = hist['Close'].iloc[-2] if len(hist) > 1 else current_price
-        change = current_price - prev_price
-        change_percent = (change / prev_price) * 100
-        
-        return {
-            'symbol': symbol,
-            'current_price': current_price,
-            'change': change,
-            'change_percent': change_percent,
-            'historical': hist,
-            '52w_high': info.get('fiftyTwoWeekHigh', current_price * 1.2),
-            '52w_low': info.get('fiftyTwoWeekLow', current_price * 0.8)
-        }
-    except:
-        return None
+    return get_stock_data(symbol, period)
 
 def mini_indices():
     """Get major indices data."""
-    indices = [
-        {"symbol": "^GSPC", "name": "S&P 500"},
-        {"symbol": "^DJI", "name": "Dow Jones"},
-        {"symbol": "^IXIC", "name": "NASDAQ"},
-        {"symbol": "BTC-USD", "name": "Bitcoin"}
+    indices_data = get_major_indices()
+    # Convert to old format for compatibility
+    return [
+        {
+            "name": idx["name"],
+            "price": idx["price"],
+            "chg_pct": idx["change_percent"]
+        }
+        for idx in indices_data
     ]
-    
-    results = []
-    for index in indices:
-        data = get_cached_data(index["symbol"], "1d")
-        if data:
-            results.append({
-                "name": index["name"],
-                "price": data["current_price"],
-                "chg_pct": data["change_percent"]
-            })
-        else:
-            # Fallback data
-            results.append({
-                "name": index["name"],
-                "price": 5000 + random.randint(-100, 100),
-                "chg_pct": random.uniform(-1, 1)
-            })
-    
-    return results
 
 def chart(historical_data, symbol, chart_type="line"):
     """Create a chart from historical data."""
-    fig = go.Figure()
-    
-    if chart_type == "candlestick":
-        fig.add_trace(go.Candlestick(
-            x=historical_data.index,
-            open=historical_data['Open'],
-            high=historical_data['High'],
-            low=historical_data['Low'],
-            close=historical_data['Close'],
-            name=symbol
-        ))
-    else:
-        fig.add_trace(go.Scatter(
-            x=historical_data.index,
-            y=historical_data['Close'],
-            mode='lines',
-            name=symbol
-        ))
-    
-    fig.update_layout(
-        title=f"{symbol} Price",
-        xaxis_title="Date",
-        yaxis_title="Price ($)",
-        height=400
-    )
-    return fig
+    return create_price_chart(historical_data, f"{symbol} Price", chart_type)
 
 def place_order(user_id, symbol, side, cash_amount=None, units=None):
     """Place a trading order."""
@@ -562,7 +794,8 @@ def show_main_app():
         st.metric("Cash Balance", format_money(user["balance"]))
 
         st.subheader("Market Overview")
-        for index in mini_indices():
+        indices = mini_indices()
+        for index in indices:
             st.metric(index["name"], format_money(index["price"]), f"{index['chg_pct']:.2f}%")
 
         st.divider()
@@ -774,68 +1007,170 @@ def show_banking(user):
             st.info("No transactions yet. Send or request money to get started!")
 
 def show_markets(user):
-    st.header("Markets")
+    st.header("📈 Multi-Asset Markets")
+    
+    # Quick asset categories
+    st.subheader("Asset Classes")
+    asset_tabs = st.tabs(["Stocks & ETFs", "Crypto", "Bonds & Treasuries", "Alternative Investments"])
+    
+    with asset_tabs[0]:
+        show_stocks_etfs()
+    
+    with asset_tabs[1]:
+        show_crypto_assets()
+    
+    with asset_tabs[2]:
+        show_bonds_treasuries()
+    
+    with asset_tabs[3]:
+        show_alternative_investments()
+    
+    # Universal research tool
+    st.markdown("---")
+    show_universal_research()
 
-    if not user["watchlist"]:
-        c1, c2 = st.columns([3, 1])
-        with c2:
-            if st.button("🎯 Add Starter Watchlist", use_container_width=True, key="mk_add_watchlist"):
-                user["watchlist"] = ["AAPL", "NVDA", "BTC-USD", "ETH-USD"]
-                toast_success("Starter watchlist added!")
-                add_notification("🎯 Starter watchlist added with popular stocks & crypto")
-                st.rerun()
-
-    st.subheader("Major Indices")
-    indices = mini_indices()
+def show_stocks_etfs():
+    st.subheader("📊 Stocks & ETFs")
+    
+    # Major indices
+    st.write("**Major Indices**")
+    indices = get_major_indices()
     cols = st.columns(len(indices))
+    
     for i, index in enumerate(indices):
         with cols[i]:
-            st.metric(index["name"], format_money(index["price"]), f"{index['chg_pct']:.2f}%")
+            delta_color = "normal"  # Let Streamlit decide based on value
+            st.metric(
+                label=index['name'],
+                value=f"${index['price']:,.2f}",
+                delta=f"{index['change_percent']:+.2f}%",
+                delta_color=delta_color
+            )
+            st.caption(f"Source: {index.get('source', 'Yahoo Finance')}")
 
-    st.subheader("Market Research")
-    c1, c2, c3 = st.columns([2, 1, 1])
+    # Popular stocks
+    st.write("**Popular Stocks**")
+    popular_stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META']
+    stock_cols = st.columns(3)
+    
+    for i, symbol in enumerate(popular_stocks):
+        with stock_cols[i % 3]:
+            data = get_stock_data(symbol, '1d')
+            if data:
+                st.metric(
+                    label=symbol,
+                    value=f"${data['current_price']:,.2f}",
+                    delta=f"{data['change_percent']:+.2f}%"
+                )
 
-    with c1:
-        symbol = _clean_symbol(st.text_input("Symbol", value="AAPL", key="mk_symbol"))
-    with c2:
-        period = st.selectbox("Period", ["1d", "5d", "1mo", "3mo", "6mo", "1y", "2y"], key="mk_period")
-    with c3:
-        chart_type = st.selectbox("Chart Type", ["Line", "Candlestick"], key="mk_chart_type")
+def show_crypto_assets():
+    st.subheader("₿ Cryptocurrencies")
+    
+    crypto_data = get_crypto_prices()
+    cols = st.columns(len(crypto_data))
+    
+    for i, crypto in enumerate(crypto_data):
+        with cols[i]:
+            st.metric(
+                label=crypto['symbol'],
+                value=f"${crypto['current_price']:,.2f}",
+                delta=f"{crypto['change_percent']:+.2f}%"
+            )
+            st.caption(f"Source: {crypto['source']}")
 
-    if symbol:
-        data = get_cached_data(symbol, period)
-        if data is None:
-            st.error(f"No data found for {symbol}. Try a different symbol or period.")
-        else:
-            c1, c2, c3, c4 = st.columns(4)
-            with c1:
-                st.metric("Current Price", format_money(data["current_price"]))
-            with c2:
-                st.metric("Change", f"{data['change']:.2f}")
-            with c3:
-                st.metric("Change %", f"{data['change_percent']:.2f}%")
-            with c4:
-                st.metric("52W Range", f"{data['52w_low']:.0f}-{data['52w_high']:.0f}")
-
-            fig = chart(data["historical"], symbol, chart_type.lower())
+    # Historical chart for Bitcoin
+    st.write("**Bitcoin - 7 Day History**")
+    btc_data = get_crypto_data('bitcoin', 7)
+    if btc_data and btc_data['historical'] is not None:
+        fig = create_price_chart(btc_data['historical'], "Bitcoin (7 Days)")
+        if fig:
             st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("Historical data temporarily unavailable")
 
-            c5, c6 = st.columns(2)
-            with c5:
-                if symbol not in user["watchlist"]:
-                    if st.button("Add to Watchlist", key=f"add_{symbol}"):
-                        user["watchlist"].append(symbol)
-                        toast_success(f"Added {symbol} to watchlist")
-                        add_notification(f"📈 Added {symbol} to watchlist")
-                        st.rerun()
-                else:
-                    if st.button("Remove from Watchlist", key=f"rm_{symbol}"):
-                        user["watchlist"].remove(symbol)
-                        toast_info(f"Removed {symbol} from watchlist")
-                        add_notification(f"📉 Removed {symbol} from watchlist")
-                        st.rerun()
-            with c6:
-                st.write("")
+def show_bonds_treasuries():
+    st.subheader("📋 Bonds & Treasuries")
+    
+    treasury_data = get_treasury_yields()
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("1-Month Treasury", f"{treasury_data['1_month']:.2f}%")
+    with col2:
+        st.metric("2-Year Treasury", f"{treasury_data['2_year']:.2f}%")
+    with col3:
+        st.metric("10-Year Treasury", f"{treasury_data['10_year']:.2f}%")
+    
+    st.caption(f"Source: {treasury_data['source']} | Updated: {treasury_data['last_updated']}")
+
+def show_alternative_investments():
+    st.subheader("💎 Alternative Investments")
+    
+    # Precious Metals
+    metals_data = get_metals_prices()
+    st.write("**Precious Metals**")
+    m1, m2, m3 = st.columns(3)
+    with m1:
+        if 'gold' in metals_data:
+            st.metric("Gold (oz)", f"${metals_data['gold']['price']:,.2f}")
+    with m2:
+        if 'silver' in metals_data:
+            st.metric("Silver (oz)", f"${metals_data['silver']['price']:,.2f}")
+    with m3:
+        if 'platinum' in metals_data:
+            st.metric("Platinum (oz)", f"${metals_data['platinum']['price']:,.2f}")
+    
+    if metals_data and 'gold' in metals_data:
+        st.caption(f"Source: {metals_data['gold']['source']}")
+
+def show_universal_research():
+    st.subheader("🔍 Universal Research Tool")
+    
+    col1, col2, col3 = st.columns([2, 1, 1])
+    
+    with col1:
+        symbol = st.text_input(
+            "Research Any Asset", 
+            value="AAPL",
+            placeholder="AAPL, BTC-USD, GC=F, etc.",
+            key="universal_research"
+        )
+    
+    with col2:
+        period = st.selectbox("Period", ["1d", "1wk", "1mo", "3mo", "1y"], key="research_period")
+    
+    with col3:
+        st.write("")  # Spacer
+        if st.button("Research Asset", type="primary"):
+            st.session_state.research_symbol = symbol
+            st.rerun()
+    
+    # Research results
+    if hasattr(st.session_state, 'research_symbol'):
+        symbol = st.session_state.research_symbol
+        data = get_stock_data(symbol, period)
+        
+        if data:
+            # Display metrics
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Current Price", f"${data['current_price']:,.2f}")
+            with col2:
+                st.metric("Change", f"${data['change']:+.2f}")
+            with col3:
+                st.metric("Change %", f"{data['change_percent']:+.2f}%")
+            with col4:
+                st.metric("52W Range", f"${data['52w_low']:.0f}-${data['52w_high']:.0f}")
+            
+            st.caption(f"Data Source: {data['source']} | Last Updated: {data['last_updated'].strftime('%Y-%m-%d %H:%M')}")
+            
+            # Historical chart
+            if not data['historical'].empty:
+                fig = create_price_chart(data['historical'], f"{symbol} Price History")
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.error(f"Could not fetch data for {symbol}. Try a different symbol.")
 
 def show_portfolio(user):
     st.header("Portfolio")
@@ -988,12 +1323,15 @@ def main():
     ensure_demo_users()
     
     # Header
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-      st.markdown("<div style='text-align: center;'><img src='assets/BB_logo.png' width='200'></div>", unsafe_allow_html=True)
-)
-        st.markdown("<h3 style='text-align: center; font-size:108px;'><b><i>Break Bread. Build Wealth.</i></b></h3>", unsafe_allow_html=True)
-
+   with col2:
+    st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
+    try:
+        st.image("assets/BB_logo.png", width=300)
+    except FileNotFoundError:
+        st.markdown("<h1>🍞 Break Bread</h1>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    st.markdown("<h3 style='text-align: center; font-size:36px;'><b><i>Break Bread. Build Wealth.</i></b></h3>", unsafe_allow_html=True)
     # Auth gate
     if not st.session_state.get("auth_user"):
         show_login()
@@ -1003,31 +1341,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-from market_data import *
-
-# Quick market overview
-st.header("Market Overview")
-overview = get_market_overview()
-
-for index in overview['indices']:
-    st.metric(index['name'], f"${index['price']:,.2f}", f"{index['change_percent']:+.2f}%")
-
-# Historical charts
-st.header("Historical Charts")
-
-# Bitcoin 7-day chart
-btc_data = get_bitcoin_data(days=7)
-if btc_data:
-    fig = create_price_chart(btc_data['historical'], "Bitcoin (7 Days)")
-    st.plotly_chart(fig, use_container_width=True)
-
-# S&P 500 1-month chart
-sp500_data = get_stock_data("^GSPC", "1mo")
-if sp500_data:
-    fig = create_performance_chart(sp500_data['historical'], "S&P 500 Performance")
-    st.plotly_chart(fig, use_container_width=True)
-
-# Treasury yields
-treasury_data = get_treasury_yields()
-st.write("Latest Treasury Yields:", treasury_data)
