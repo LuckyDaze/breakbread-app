@@ -989,7 +989,7 @@ def show_main_app():
         st.rerun()
 
     with st.sidebar:
-        # User profile section
+        # User profile section - FIXED LOGO
         st.markdown(f"""
         <div style='
             background: linear-gradient(135deg, #FE8B00 0%, #FF9A2D 100%);
@@ -1001,37 +1001,20 @@ def show_main_app():
         '>
             <div style='
                 background: rgba(0, 0, 0, 0.2);
-                padding: 8px;
+                padding: 12px;
                 border-radius: 12px;
                 display: inline-block;
                 margin-bottom: 0.5rem;
             '>
-               <img src="assets/breakbread-logo.png">
-        </div>
+        """, unsafe_allow_html=True)
+        
+        # Use st.image for the logo instead of HTML img tag
+        st.image("assets/breakbread-logo.png", width=80)
+        
+        st.markdown(f"""
             </div>
             <h3 style='color: #000000; margin: 0.5rem 0 0.25rem 0; font-weight: 600;'>{user['app_id']}</h3>
             <p style='color: #000000; margin: 0; opacity: 0.8; font-size: 0.9rem;'>Break Bread Member</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Balance card
-        st.markdown(f"""
-        <div style='
-            background-color: #1A1A1A;
-            padding: 1.25rem;
-            border-radius: 16px;
-            border: 1px solid #333;
-            margin-bottom: 1.5rem;
-        '>
-            <p style='color: #888; margin: 0; font-size: 0.9rem; font-weight: 500;'>Available Cash</p>
-            <h3 style='color: #FE8B00; margin: 0.5rem 0; font-size: 1.5rem; font-weight: 600;'>{format_money(user["balance"])}</h3>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Navigation
-        st.markdown("""
-        <div style='margin-bottom: 1rem;'>
-            <h4 style='color: #FFFFFF; margin: 0; font-weight: 600;'>Navigation</h4>
         </div>
         """, unsafe_allow_html=True)
         
