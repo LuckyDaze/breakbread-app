@@ -2086,11 +2086,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-import streamlit as st
-
-st.image(
-    "https://raw.githubusercontent.com/<your-username>/<your-repo>/main/assets/profile.png",
-    width=100,
-    caption="Break Bread Member"
 )
