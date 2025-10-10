@@ -1006,7 +1006,7 @@ def show_main_app():
                 display: inline-block;
                 margin-bottom: 0.5rem;
             '>
-               <img src="assets/breakbread-logo.png" alt="BB">
+               <img src="assets/breakbread-logo.png">
         </div>
             </div>
             <h3 style='color: #000000; margin: 0.5rem 0 0.25rem 0; font-weight: 600;'>{user['app_id']}</h3>
