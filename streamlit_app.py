@@ -1323,15 +1323,23 @@ def main():
     ensure_demo_users()
     
     # Header
-   with col2:
-    st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
-    try:
-        st.image("assets/BB_logo.png", width=300)
-    except FileNotFoundError:
-        st.markdown("<h1>🍞 Break Bread</h1>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+   def main():
+    # Initialize demo users
+    ensure_demo_users()
     
-    st.markdown("<h3 style='text-align: center; font-size:36px;'><b><i>Break Bread. Build Wealth.</i></b></h3>", unsafe_allow_html=True)
+    # Header with logo
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        # Display your logo image
+        st.image("assets/BB_logo.png", width=300)
+        st.markdown("<h3 style='text-align: center; font-size:36px;'><b><i>Break Bread. Build Wealth.</i></b></h3>", unsafe_allow_html=True)
+
+    # Auth gate
+    if not st.session_state.get("auth_user"):
+        show_login()
+        return
+
+    show_main_app()
     # Auth gate
     if not st.session_state.get("auth_user"):
         show_login()
