@@ -204,7 +204,7 @@ st.markdown("""
 # ----------------------------
 st.set_page_config(
     page_title="Break Bread",
-    page_icon="🍞",  # Using emoji as fallback
+    page_icon="assets/favicon.png",  # Using emoji as fallback
     layout="wide",
     initial_sidebar_state="expanded",
 )
