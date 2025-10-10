@@ -988,30 +988,30 @@ def show_main_app():
         logout()
         st.rerun()
 
-   with st.sidebar:
-    # Profile card (light, contained, consistent with sidebar)
-    st.markdown(f"""
-    <div class="bb-profile">
-        <div class="bb-prof-avatar">
-            <img src="assets/breakbread-logo.png" alt="BB">
+    with st.sidebar:
+        # User profile section
+        st.markdown(f"""
+        <div style='
+            background: linear-gradient(135deg, #FE8B00 0%, #FF9A2D 100%);
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(254, 139, 0, 0.3);
+        '>
+            <div style='
+                background: rgba(0, 0, 0, 0.2);
+                padding: 8px;
+                border-radius: 12px;
+                display: inline-block;
+                margin-bottom: 0.5rem;
+            '>
+                <img src="https://breakbread-app-2yphdh8ckmnctashqklne5.streamlit.app/favicon.ico" width="24" style='border-radius: 6px;'>
+            </div>
+            <h3 style='color: #000000; margin: 0.5rem 0 0.25rem 0; font-weight: 600;'>{user['app_id']}</h3>
+            <p style='color: #000000; margin: 0; opacity: 0.8; font-size: 0.9rem;'>Break Bread Member</p>
         </div>
-        <div class="bb-prof-name">{user['app_id']}</div>
-        <div class="bb-prof-tag">Break Bread Member</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Available cash card (light card, no black hole effect)
-    st.markdown(f"""
-    <div class="bb-sidecard">
-        <h6>Available Cash</h6>
-        <p class="bb-price">{format_money(user["balance"])}</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Navigation (keep your existing buttons)
-    st.markdown("<h6 style='margin-top:8px;color:#111;font-weight:700;'>Navigation</h6>", unsafe_allow_html=True)
-    # ... your nav buttons ...
-
+        """, unsafe_allow_html=True)
 
         # Balance card
         st.markdown(f"""
@@ -1098,7 +1098,6 @@ def show_main_app():
         show_settings(user)
     else:
         show_dashboard(user)  # Default to dashboard
-
 def show_dashboard(user):
     # Header with balance
     total_balance = portfolio_value(user["user_id"]) + user["balance"]
