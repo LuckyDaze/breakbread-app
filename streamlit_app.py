@@ -989,24 +989,6 @@ def show_main_app():
         st.rerun()
 
     with st.sidebar:
-        # User profile section - FIXED LOGO
-        st.markdown(f"""
-        <div style='
-            background: linear-gradient(135deg, #FE8B00 0%, #FF9A2D 100%);
-            padding: 1.5rem;
-            border-radius: 16px;
-            margin-bottom: 1.5rem;
-            text-align: center;
-            box-shadow: 0 4px 16px rgba(254, 139, 0, 0.3);
-        '>
-            <div style='
-                background: rgba(0, 0, 0, 0.2);
-                padding: 12px;
-                border-radius: 12px;
-                display: inline-block;
-                margin-bottom: 0.5rem;
-            '>
-        """, unsafe_allow_html=True)
         
         # Use st.image for the logo instead of HTML img tag
         st.image("assets/breakbread-logo.png", width=80)
