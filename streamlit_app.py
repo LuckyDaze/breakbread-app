@@ -1322,11 +1322,6 @@ def main():
     # Initialize demo users
     ensure_demo_users()
     
-    # Header
-   def main():
-    # Initialize demo users
-    ensure_demo_users()
-    
     # Header with logo
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -1334,12 +1329,6 @@ def main():
         st.image("assets/BB_logo.png", width=300)
         st.markdown("<h3 style='text-align: center; font-size:36px;'><b><i>Break Bread. Build Wealth.</i></b></h3>", unsafe_allow_html=True)
 
-    # Auth gate
-    if not st.session_state.get("auth_user"):
-        show_login()
-        return
-
-    show_main_app()
     # Auth gate
     if not st.session_state.get("auth_user"):
         show_login()
