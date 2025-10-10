@@ -1137,7 +1137,7 @@ def show_dashboard(user):
     actions_col1, actions_col2, actions_col3, actions_col4 = st.columns(4)
     
     with actions_col1:
-        if st.button("**💸 Send**", use_container_width=True, help="Send money to friends"):
+        if st.button("**💸 Break Bread**", use_container_width=True, help="Break Bread Peer-to-Peer Money Exchange"):
             st.session_state.app_nav_radio = "Banking"
             st.rerun()
     
@@ -1147,7 +1147,7 @@ def show_dashboard(user):
             st.rerun()
     
     with actions_col3:
-        if st.button("**💰 Paycheck**", use_container_width=True, help="Simulate paycheck"):
+        if st.button("**💰 Deposit Money**", use_container_width=True, help="Deposit Money"):
             ok, _ = simulate_paycheck(user["user_id"])
             if ok:
                 toast_success("💰 Paycheck deposited!")
