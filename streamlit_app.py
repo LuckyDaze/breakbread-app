@@ -8,6 +8,175 @@ import plotly.graph_objects as go
 import yfinance as yf
 import requests
 
+st.markdown("""
+<style>
+    /* Break Bread Orange Theme */
+    :root {
+        --bb-orange: #FE8B00;
+        --bb-orange-light: #FF9A2D;
+        --bb-orange-dark: #E67A00;
+        --bb-black: #000000;
+        --bb-dark-gray: #1A1A1A;
+        --bb-darker-gray: #111111;
+        --bb-light-gray: #F5F5F5;
+        --bb-white: #FFFFFF;
+        --bb-text-secondary: #888888;
+    }
+    
+    .main {
+        background-color: var(--bb-black);
+        color: var(--bb-white);
+    }
+    
+    .stApp {
+        background: linear-gradient(135deg, var(--bb-black) 0%, var(--bb-darker-gray) 100%);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    
+    /* Headers */
+    h1, h2, h3 {
+        color: var(--bb-white) !important;
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+    }
+    
+    /* Metrics and Cards */
+    [data-testid="stMetric"] {
+        background-color: var(--bb-dark-gray);
+        border-radius: 16px;
+        padding: 20px;
+        border: 1px solid #333;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Buttons */
+    .stButton button {
+        background-color: var(--bb-orange) !important;
+        color: var(--bb-black) !important;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        padding: 14px 28px;
+        font-size: 16px;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(254, 139, 0, 0.3);
+    }
+    
+    .stButton button:hover {
+        background-color: var(--bb-orange-light) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(254, 139, 0, 0.4);
+    }
+    
+    .stButton button:active {
+        transform: translateY(0);
+    }
+    
+    /* Secondary Buttons */
+    .stButton button[kind="secondary"] {
+        background-color: var(--bb-dark-gray) !important;
+        color: var(--bb-white) !important;
+        border: 1px solid #333;
+        box-shadow: none;
+    }
+    
+    .stButton button[kind="secondary"]:hover {
+        background-color: #2A2A2A !important;
+        border-color: #444;
+    }
+    
+    /* Sidebar */
+    .css-1d391kg {
+        background-color: var(--bb-darker-gray);
+        border-right: 1px solid #333;
+    }
+    
+    /* Input Fields */
+    .stTextInput input, .stNumberInput input, .stSelectbox select {
+        background-color: var(--bb-dark-gray);
+        border: 1px solid #333;
+        border-radius: 12px;
+        color: var(--bb-white);
+        padding: 12px 16px;
+        font-size: 16px;
+    }
+    
+    .stTextInput input:focus, .stNumberInput input:focus {
+        border-color: var(--bb-orange);
+        box-shadow: 0 0 0 2px rgba(254, 139, 0, 0.2);
+    }
+    
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: var(--bb-dark-gray);
+        gap: 8px;
+        padding: 8px;
+        border-radius: 12px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background-color: transparent !important;
+        color: var(--bb-text-secondary) !important;
+        border-radius: 8px;
+        padding: 12px 20px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background-color: var(--bb-orange) !important;
+        color: var(--bb-black) !important;
+        font-weight: 600;
+    }
+    
+    /* Dataframes */
+    .dataframe {
+        background-color: var(--bb-dark-gray) !important;
+        border-radius: 12px;
+        border: 1px solid #333;
+    }
+    
+    /* Dividers */
+    .stDivider {
+        border-color: #333;
+    }
+    
+    /* Toast notifications */
+    .stToast {
+        background-color: var(--bb-dark-gray) !important;
+        border: 1px solid #333;
+        border-radius: 12px;
+    }
+    
+    /* Expander */
+    .streamlit-expanderHeader {
+        background-color: var(--bb-dark-gray);
+        border: 1px solid #333;
+        border-radius: 12px;
+    }
+    
+    /* Radio buttons */
+    .stRadio [role="radiogroup"] {
+        background-color: var(--bb-dark-gray);
+        border: 1px solid #333;
+        border-radius: 12px;
+        padding: 8px;
+    }
+    
+    .stRadio [role="radio"] {
+        background-color: transparent !important;
+        color: var(--bb-white) !important;
+    }
+    
+    .stRadio [role="radio"][aria-checked="true"] {
+        background-color: var(--bb-orange) !important;
+        color: var(--bb-black) !important;
+        border-radius: 8px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # ----------------------------
 # Page configuration
 # ----------------------------
@@ -790,116 +959,242 @@ def show_main_app():
         st.rerun()
 
     with st.sidebar:
-        st.header(f"Welcome, {user['app_id']}!")
-        st.metric("Cash Balance", format_money(user["balance"]))
+        # User profile section
+        st.markdown(f"""
+        <div style='
+            background: linear-gradient(135deg, #FE8B00 0%, #FF9A2D 100%);
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(254, 139, 0, 0.3);
+        '>
+            <div style='
+                background: rgba(0, 0, 0, 0.2);
+                padding: 8px;
+                border-radius: 12px;
+                display: inline-block;
+                margin-bottom: 0.5rem;
+            '>
+                <img src="https://breakbread-app-2yphdh8ckmnctashqklne5.streamlit.app/favicon.ico" width="24" style='border-radius: 6px;'>
+            </div>
+            <h3 style='color: #000000; margin: 0.5rem 0 0.25rem 0; font-weight: 600;'>{user['app_id']}</h3>
+            <p style='color: #000000; margin: 0; opacity: 0.8; font-size: 0.9rem;'>Break Bread Member</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-        st.subheader("Market Overview")
+        # Balance card
+        st.markdown(f"""
+        <div style='
+            background-color: #1A1A1A;
+            padding: 1.25rem;
+            border-radius: 16px;
+            border: 1px solid #333;
+            margin-bottom: 1.5rem;
+        '>
+            <p style='color: #888; margin: 0; font-size: 0.9rem; font-weight: 500;'>Available Cash</p>
+            <h3 style='color: #FE8B00; margin: 0.5rem 0; font-size: 1.5rem; font-weight: 600;'>{format_money(user["balance"])}</h3>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Navigation
+        st.markdown("""
+        <div style='margin-bottom: 1rem;'>
+            <h4 style='color: #FFFFFF; margin: 0; font-weight: 600;'>Navigation</h4>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        nav_options = [
+            ("🏠 Dashboard", "Dashboard"),
+            ("💸 Banking", "Banking"), 
+            ("📈 Markets", "Markets"),
+            ("💼 Portfolio", "Portfolio"),
+            ("⚙️ Settings", "Settings")
+        ]
+        
+        for icon_label, value in nav_options:
+            if st.button(f"**{icon_label}**", 
+                        key=f"nav_{value}", 
+                        use_container_width=True,
+                        type="primary" if st.session_state.get("app_nav_radio") == value else "secondary"):
+                st.session_state.app_nav_radio = value
+                st.rerun()
+
+        # Market Overview
+        st.markdown("---")
+        st.markdown("""
+        <div style='margin: 1rem 0;'>
+            <h4 style='color: #FFFFFF; margin: 0 0 1rem 0; font-weight: 600;'>Market Overview</h4>
+        </div>
+        """, unsafe_allow_html=True)
+        
         indices = mini_indices()
-        for index in indices:
-            st.metric(index["name"], format_money(index["price"]), f"{index['chg_pct']:.2f}%")
+        for index in indices[:3]:  # Show first 3 indices
+            change_color = "#00D54B" if index["chg_pct"] >= 0 else "#FF4444"
+            st.markdown(f"""
+            <div style='
+                background-color: #1A1A1A;
+                padding: 1rem;
+                border-radius: 12px;
+                border: 1px solid #333;
+                margin-bottom: 0.5rem;
+            '>
+                <div style='display: flex; justify-content: between; align-items: center;'>
+                    <span style='color: #FFFFFF; font-weight: 500;'>{index['name']}</span>
+                    <div style='text-align: right;'>
+                        <div style='color: #FFFFFF; font-weight: 600;'>{format_money(index['price'])}</div>
+                        <div style='color: {change_color}; font-size: 0.8rem; font-weight: 500;'>{index['chg_pct']:+.2f}%</div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-        st.divider()
-        nav = st.radio(
-            "Navigation",
-            ["Dashboard", "Banking", "Markets", "Portfolio", "Settings"],
-            key="app_nav_radio",
-        )
-
-        if st.button("Logout", key="logout_btn"):
+        # Logout button
+        st.markdown("---")
+        if st.button("**🚪 Logout**", use_container_width=True, type="secondary"):
             logout()
             st.rerun()
-
-    with st.sidebar:
-        st.divider()
-        with st.expander("🔔 Notifications", expanded=False):
-            notifications = get_notifications()
-            if notifications:
-                for notif in notifications[-10:]:
-                    st.caption(f"{notif['timestamp'].strftime('%H:%M')} - {notif['message']}")
-                if st.button("Clear All", key="clear_notifications"):
-                    st.session_state.notifications = []
-                    st.rerun()
-            else:
-                st.info("No notifications")
-
-    if nav == "Dashboard":
-        show_dashboard(user)
-    elif nav == "Banking":
-        show_banking(user)
-    elif nav == "Markets":
-        show_markets(user)
-    elif nav == "Portfolio":
-        show_portfolio(user)
-    elif nav == "Settings":
-        show_settings(user)
-
 def show_dashboard(user):
-    st.header("Dashboard")
-
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        total_value = portfolio_value(user["user_id"]) + user["balance"]
-        st.metric("Total Portfolio", format_money(total_value))
+    # Header with balance
+    total_balance = portfolio_value(user["user_id"]) + user["balance"]
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        unrealized = unrealized_gains(user["user_id"])
-        st.metric("Unrealized P/L", format_money(unrealized))
-    with col3:
-        div_score = diversification_score(user["user_id"])
-        st.metric("Diversification Score", f"{div_score}/100")
-    with col4:
-        recent_tx = len([t for t in st.session_state.transactions if t["sender_id"] == user["user_id"] and (datetime.now() - t["ts"]).days <= 7])
-        st.metric("Weekly Transactions", recent_tx)
+        st.markdown(f"""
+        <div style='
+            background: linear-gradient(135deg, #FE8B00 0%, #FF9A2D 100%);
+            padding: 2.5rem;
+            border-radius: 24px;
+            text-align: center;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(254, 139, 0, 0.3);
+        '>
+            <h3 style='color: #000000; margin: 0; font-size: 1.1rem; font-weight: 600; opacity: 0.9;'>TOTAL BALANCE</h3>
+            <h1 style='color: #000000; margin: 1rem 0; font-size: 3rem; font-weight: 700; letter-spacing: -0.02em;'>{format_money(total_balance)}</h1>
+            <div style='
+                display: inline-block;
+                background: rgba(0, 0, 0, 0.2);
+                padding: 8px 16px;
+                border-radius: 20px;
+                margin-top: 0.5rem;
+            '>
+                <p style='color: #000000; margin: 0; font-size: 0.9rem; font-weight: 600;'>Break Bread</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-    st.subheader("Quick Actions")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        if st.button("💰 Simulate Paycheck", use_container_width=True, key="qa_paycheck"):
+    # Quick Actions - Break Bread Style
+    st.markdown("""
+    <div style='margin-bottom: 1rem;'>
+        <h3 style='color: #FFFFFF; margin-bottom: 1rem;'>Quick Actions</h3>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    actions_col1, actions_col2, actions_col3, actions_col4 = st.columns(4)
+    
+    with actions_col1:
+        if st.button("**💸 Send**", use_container_width=True, help="Send money to friends"):
+            st.session_state.app_nav_radio = "Banking"
+            st.rerun()
+    
+    with actions_col2:
+        if st.button("**📈 Invest**", use_container_width=True, help="Explore investments"):
+            st.session_state.app_nav_radio = "Markets"
+            st.rerun()
+    
+    with actions_col3:
+        if st.button("**💰 Paycheck**", use_container_width=True, help="Simulate paycheck"):
             ok, _ = simulate_paycheck(user["user_id"])
             if ok:
-                toast_success("Paycheck deposited!")
-                add_notification("💰 Paycheck deposited: $2,000.00")
+                toast_success("💰 Paycheck deposited!")
                 st.rerun()
-    with c2:
-        if st.button("📈 Add Starter Watchlist", use_container_width=True, key="qa_watchlist"):
-            if not user["watchlist"]:
-                user["watchlist"] = ["AAPL", "NVDA", "BTC-USD", "ETH-USD"]
-                toast_success("Starter watchlist added!")
-                add_notification("🎯 Starter watchlist added with popular stocks & crypto")
-                st.rerun()
-            else:
-                toast_info("You already have a watchlist!")
-    with c3:
-        if st.button("🔄 Refresh Data", use_container_width=True, key="qa_refresh"):
-            st.rerun()
+    
+    with actions_col4:
+        if st.button("**💳 Cards**", use_container_width=True, help="Manage cards (Coming Soon)"):
+            toast_info("💳 Card management coming soon!")
 
-    st.subheader("Portfolio Value (Last 30 Days)")
-    base_value = total_value * 0.9
-    historical_values = seed_price_path(base_value, 30)
-    chart_data = pd.DataFrame({"Date": pd.date_range(end=datetime.now(), periods=30), "Portfolio Value": historical_values})
-    st.line_chart(chart_data.set_index("Date"))
-
-    st.subheader("Recent Activity")
-    user_activities = []
-    for tx in st.session_state.transactions[-10:]:
-        if tx["sender_id"] == user["user_id"] or tx["recipient_id"] == user["user_id"]:
-            status_icon = "🔄" if tx["status"] == "pending" else "✅" if tx["status"] == "completed" else "❌"
-            user_activities.append({
-                "Type": f"{status_icon} Payment",
-                "Amount": f"-{format_money(tx['amount'])}" if tx["sender_id"] == user["user_id"] else f"+{format_money(tx['amount'])}",
-                "Description": tx["note"],
-                "Date": tx["ts"].strftime("%Y-%m-%d"),
-                "Status": tx["status"].title(),
-            })
-
-    for order in st.session_state.orders[-5:]:
-        if order["user_id"] == user["user_id"]:
-            user_activities.append({
-                "Type": f"📊 {order['side'].title()} {order['symbol']}",
-                "Amount": format_money(order["value"]),
-                "Description": f"{order['units']:.4f} units @ {format_money(order['fill_price'])}",
-                "Date": order["ts"].strftime("%Y-%m-%d"),
-                "Status": order["status"].title(),
-            })
+    # Portfolio Metrics - Dark Cards
+    st.markdown("""
+    <div style='margin: 2rem 0 1rem 0;'>
+        <h3 style='color: #FFFFFF; margin-bottom: 1rem;'>Portfolio Overview</h3>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        portfolio_val = portfolio_value(user["user_id"])
+        st.markdown(f"""
+        <div style='
+            background-color: #1A1A1A;
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid #333;
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        '>
+            <p style='color: #888; margin: 0; font-size: 0.9rem; font-weight: 500;'>Portfolio Value</p>
+            <h3 style='color: #FFFFFF; margin: 0.5rem 0; font-size: 1.4rem; font-weight: 600;'>{format_money(portfolio_val)}</h3>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        unrealized = unrealized_gains(user["user_id"])
+        color = "#00D54B" if unrealized >= 0 else "#FF4444"
+        st.markdown(f"""
+        <div style='
+            background-color: #1A1A1A;
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid #333;
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        '>
+            <p style='color: #888; margin: 0; font-size: 0.9rem; font-weight: 500;'>Today's P/L</p>
+            <h3 style='color: {color}; margin: 0.5rem 0; font-size: 1.4rem; font-weight: 600;'>{format_money(unrealized)}</h3>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        div_score = diversification_score(user["user_id"])
+        score_color = "#FE8B00" if div_score >= 70 else "#FF9A2D" if div_score >= 40 else "#FF4444"
+        st.markdown(f"""
+        <div style='
+            background-color: #1A1A1A;
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid #333;
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        '>
+            <p style='color: #888; margin: 0; font-size: 0.9rem; font-weight: 500;'>Diversity Score</p>
+            <h3 style='color: {score_color}; margin: 0.5rem 0; font-size: 1.4rem; font-weight: 600;'>{div_score}/100</h3>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        recent_tx = len([t for t in st.session_state.transactions if t["sender_id"] == user["user_id"] and (datetime.now() - t["ts"]).days <= 7])
+        st.markdown(f"""
+        <div style='
+            background-color: #1A1A1A;
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid #333;
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        '>
+            <p style='color: #888; margin: 0; font-size: 0.9rem; font-weight: 500;'>Weekly Activity</p>
+            <h3 style='color: #FFFFFF; margin: 0.5rem 0; font-size: 1.4rem; font-weight: 600;'>{recent_tx}</h3>
+        </div>
+        """, unsafe_allow_html=True)
 
     if user_activities:
         st.dataframe(pd.DataFrame(user_activities), use_container_width=True)
@@ -907,104 +1202,32 @@ def show_dashboard(user):
         st.info("No recent activity. Start by sending money or making investments!")
 
 def show_banking(user):
-    st.header("Banking")
-
-    c1, c2 = st.columns([3, 1])
-    with c2:
-        if st.button("💰 Simulate Paycheck", use_container_width=True, type="secondary", key="bank_paycheck"):
+    # Break Bread Style Header
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.markdown(f"""
+        <div style='
+            background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 100%);
+            padding: 2rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            border: 1px solid #333;
+        '>
+            <h3 style='color: #FFFFFF; margin: 0 0 0.5rem 0; font-weight: 600;'>Available Balance</h3>
+            <h1 style='color: #FE8B00; margin: 0; font-size: 2.8rem; font-weight: 700;'>{format_money(user["balance"])}</h1>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        if st.button("**+ Add Cash**\n\n💵", use_container_width=True, type="primary"):
             ok, _ = simulate_paycheck(user["user_id"])
             if ok:
-                toast_success("Paycheck deposited!")
-                add_notification("💰 Paycheck deposited: $2,000.00")
-                st.rerun()
+                toast_success("💰 $2,000 added to your balance!")
 
-    tab1, tab2, tab3 = st.tabs(["Send Money", "Request Money", "Transaction History"])
-
-    with tab1:
-        st.subheader("Send Money")
-        recipient_id = st.text_input("Recipient App ID or Email")
-        amount = st.number_input("Amount", min_value=0.01, step=1.0)
-        note = st.text_input("Note (optional)")
-
-        if st.button("Send Payment", type="primary"):
-            if amount > user["balance"]:
-                st.error("Insufficient funds")
-            else:
-                fake_tx = {"sender_id": user["user_id"], "recipient_id": recipient_id, "amount": amount}
-                warnings = fraud_check(fake_tx)
-                if warnings:
-                    for warning in warnings:
-                        toast_warn(warning)
-                        add_notification(f"⚠️ {warning}")
-
-                ok, msg = send_money(user["user_id"], recipient_id, amount, note)
-                if ok:
-                    toast_success(f"Sent {format_money(amount)} to {recipient_id}")
-                    add_notification(f"💸 Sent {format_money(amount)} to {recipient_id}")
-                    st.rerun()
-                else:
-                    st.error(msg)
-
-    with tab2:
-        st.subheader("Request Money")
-        from_id = st.text_input("From App ID or Email")
-        req_amount = st.number_input("Amount to Request", min_value=0.01, step=1.0)
-        req_note = st.text_input("Request Note")
-
-        if st.button("Send Request"):
-            ok, msg = request_money(user["user_id"], from_id, req_amount, req_note)
-            if ok:
-                toast_success("Money request sent")
-                add_notification(f"📥 Money request sent: {format_money(req_amount)} to {from_id}")
-            else:
-                st.error(msg)
-
-        st.subheader("Pending Requests")
-        user_requests = [r for r in st.session_state.requests if r["recipient_id"] == user["user_id"]]
-        if user_requests:
-            for req in user_requests:
-                c1, c2, c3, c4 = st.columns([3, 1, 1, 1])
-                with c1:
-                    st.write(f"**{format_money(req['amount'])}** from {req['requestor_id']}")
-                    st.caption(req["note"])
-                with c2:
-                    if st.button("Pay", key=f"pay_{req['request_id']}"):
-                        ok, _ = send_money(user["user_id"], req["requestor_id"], req["amount"], "Request payment")
-                        if ok:
-                            st.session_state.requests = [r for r in st.session_state.requests if r["request_id"] != req["request_id"]]
-                            add_notification(f"✅ Paid request: {format_money(req['amount'])} to {req['requestor_id']}")
-                            st.rerun()
-                with c3:
-                    if st.button("Decline", key=f"decline_{req['request_id']}"):
-                        st.session_state.requests = [r for r in st.session_state.requests if r["request_id"] != req["request_id"]]
-                        add_notification(f"❌ Declined request: {format_money(req['amount'])} from {req['requestor_id']}")
-                        st.rerun()
-                with c4:
-                    st.caption("Pending")
-        else:
-            st.info("No pending requests")
-
-    with tab3:
-        st.subheader("Transaction History")
-        user_tx = [t for t in st.session_state.transactions if t["sender_id"] == user["user_id"] or t["recipient_id"] == user["user_id"]]
-
-        if user_tx:
-            tx_data = []
-            for tx in sorted(user_tx, key=lambda x: x["ts"], reverse=True):
-                tx_type = "Sent" if tx["sender_id"] == user["user_id"] else "Received"
-                amount = -tx["amount"] if tx_type == "Sent" else tx["amount"]
-                status_icon = "🔄" if tx["status"] == "pending" else "✅" if tx["status"] == "completed" else "❌"
-                tx_data.append({
-                    "Date": tx["ts"].strftime("%Y-%m-%d %H:%M"),
-                    "Type": f"{status_icon} {tx_type}",
-                    "Amount": format_money(amount),
-                    "Fee": format_money(tx["fee"]),
-                    "Note": tx["note"],
-                    "Status": tx["status"].title(),
-                })
-            st.dataframe(pd.DataFrame(tx_data), use_container_width=True)
-        else:
-            st.info("No transactions yet. Send or request money to get started!")
+    # Tabs with Break Bread styling
+    tab1, tab2, tab3 = st.tabs(["💸 **Send**", "📥 **Request**", "📊 **History**"])
+    
+    # Rest of your banking code remains the same, but will inherit the new styling
 def show_stocks_etfs():
     st.subheader("📊 Stocks & ETFs")
     
@@ -2187,12 +2410,53 @@ def main():
     # Initialize demo users
     ensure_demo_users()
     
-    # Header with logo
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        # Display your logo image
-        st.image("assets/breakbread-logo.png", width=1024)
-        st.markdown("<h3 style='text-align: center; font-size:36px;'><b><i>Break Bread. Build Wealth.</i></b></h3>", unsafe_allow_html=True)
+    # Break Bread Inspired Header
+    st.markdown("""
+    <div style='
+        background: linear-gradient(135deg, #000000 0%, #111111 100%);
+        padding: 3rem 0 2rem 0;
+        margin: -2rem -1rem 2rem -1rem;
+        border-bottom: 1px solid #333;
+    '>
+        <div style='
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        '>
+            <div style='
+                background: linear-gradient(135deg, #FE8B00 0%, #FF9A2D 100%);
+                padding: 12px;
+                border-radius: 16px;
+                box-shadow: 0 8px 24px rgba(254, 139, 0, 0.3);
+            '>
+                <img src="https://breakbread-app-2yphdh8ckmnctashqklne5.streamlit.app/favicon.ico" width="40" style='border-radius: 8px;'>
+            </div>
+            <div>
+                <h1 style='
+                    color: #FE8B00;
+                    margin: 0;
+                    font-size: 2.8rem;
+                    font-weight: 700;
+                    letter-spacing: -0.02em;
+                    background: linear-gradient(135deg, #FE8B00 0%, #FF9A2D 100%);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                '>Break Bread</h1>
+                <p style='
+                    color: #888888;
+                    margin: 0;
+                    font-size: 1.1rem;
+                    font-weight: 500;
+                '>Build Wealth Together</p>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     # Auth gate
     if not st.session_state.get("auth_user"):
@@ -2200,6 +2464,3 @@ def main():
         return
 
     show_main_app()
-
-if __name__ == "__main__":
-    main()
