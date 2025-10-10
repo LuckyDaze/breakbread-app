@@ -1006,7 +1006,8 @@ def show_main_app():
                 display: inline-block;
                 margin-bottom: 0.5rem;
             '>
-                <img src="https://github.com/LuckyDaze/breakbread-app/blob/main/assets/BB_logo.png" width="24" style='border-radius: 6px;'>
+               <img src="assets/breakbread-logo.png" alt="BB">
+        </div>
             </div>
             <h3 style='color: #000000; margin: 0.5rem 0 0.25rem 0; font-weight: 600;'>{user['app_id']}</h3>
             <p style='color: #000000; margin: 0; opacity: 0.8; font-size: 0.9rem;'>Break Bread Member</p>
