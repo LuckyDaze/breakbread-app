@@ -611,7 +611,7 @@ def fraud_check(transaction):
         warnings.append("Large transaction amount")
     return warnings
 
-def send_money(sender_id, recipient_identifier, amount, note=""):
+def break_bread(sender_id, recipient_identifier, amount, note=""):
     """Send money to another user."""
     recipient = find_user(recipient_identifier)
     if not recipient:
@@ -1301,67 +1301,260 @@ def show_banking(user):
                 toast_success("💰 $2,000 added to your balance!")
                 st.rerun()
 
-    # Tabs with Break Bread styling
-    tab1, tab2, tab3 = st.tabs(["💸 **Send**", "📥 **Request**", "📊 **History**"])
+    # Enhanced Tabs with P2P Focus
+    tab1, tab2, tab3, tab4 = st.tabs(["💸 **Break Bread**", "📥 **Request Money**", "👥 **Contacts**", "📊 **History**"])
     
     with tab1:
-        col1, col2 = st.columns(2)
+        st.subheader("Send Money to Friends")
+        
+        col1, col2 = st.columns([2, 1])
+        
         with col1:
-            st.subheader("Send Money")
-            recipient = st.text_input("Recipient (Username or Email)", key="send_recipient")
-            amount = st.number_input("Amount ($)", min_value=0.01, value=10.0, key="send_amount")
-            note = st.text_input("Note (Optional)", key="send_note")
-            
-            if st.button("Send Payment", type="primary", key="send_btn"):
-                if not recipient:
-                    st.error("Please enter a recipient")
-                elif amount > user["balance"]:
-                    st.error("Insufficient funds")
+            # Send Money Form
+            with st.form("send_Break_Bread_form"):
+                st.markdown("### Send Payment")
+                
+                # Recipient selection
+                recipient_type = st.radio(
+                    "Find recipient by:",
+                    ["Username", "Email", "Phone"],
+                    horizontal=True
+                )
+                
+                if recipient_type == "Username":
+                    recipient = st.text_input("Recipient Username", placeholder="janedoe or johndoe", key="send_username")
+                elif recipient_type == "Email":
+                    recipient = st.text_input("Recipient Email", placeholder="friend@example.com", key="send_email")
                 else:
-                    ok, msg = send_money(user["user_id"], recipient, amount, note)
-                    if ok:
-                        toast_success(msg)
-                        add_notification(f"💸 Sent {format_money(amount)} to {recipient}")
-                        st.rerun()
+                    recipient = st.text_input("Recipient Phone", placeholder="+1234567890", key="send_phone")
+                
+                amount = st.number_input("Amount ($)", min_value=0.01, value=10.0, step=5.0, key="send_amount")
+                
+                note = st.text_area("Note (Optional)", placeholder="What's this for?", key="send_note", height=60)
+                
+                # Security check
+                st.markdown("---")
+                st.markdown("**Security Check**")
+                confirm_username = st.text_input(f"Confirm your username: **{user['app_id']}**", placeholder="Type your username to confirm")
+                
+                submitted = st.form_submit_button("Send Money Now", type="primary", use_container_width=True)
+                
+                if submitted:
+                    if not recipient:
+                        st.error("Please enter a recipient")
+                    elif amount > user["balance"]:
+                        st.error("Insufficient funds")
+                    elif confirm_username != user['app_id']:
+                        st.error("Username confirmation failed. Please type your username exactly as shown.")
                     else:
-                        st.error(msg)
+                        # Fraud check
+                        fraud_warnings = fraud_check({
+                            "amount": amount,
+                            "recipient": recipient,
+                            "timestamp": datetime.now()
+                        })
+                        
+                        if fraud_warnings:
+                            st.warning(f"⚠️ Security Notice: {fraud_warnings[0]}")
+                            if st.button("Proceed Anyway", key="override_fraud"):
+                                ok, msg = Break_Bread(user["user_id"], recipient, amount, note)
+                                if ok:
+                                    toast_success(msg)
+                                    add_notification(f"💸 Sent {format_money(amount)} to {recipient}")
+                                    st.rerun()
+                                else:
+                                    st.error(msg)
+                        else:
+                            ok, msg = Break_Bread(user["user_id"], recipient, amount, note)
+                            if ok:
+                                toast_success(msg)
+                                add_notification(f"💸 Sent {format_money(amount)} to {recipient}")
+                                st.rerun()
+                            else:
+                                st.error(msg)
         
         with col2:
-            st.subheader("Quick Send")
+            st.markdown("### Quick Send")
+            st.info("Send instantly to frequent contacts")
+            
+            # Demo users for quick send
             demo_users = [u for u in st.session_state.users.values() if u["user_id"] != user["user_id"]]
-            for demo_user in demo_users[:2]:
-                if st.button(f"Send $10 to {demo_user['app_id']}", key=f"quick_send_{demo_user['user_id']}"):
-                    ok, msg = send_money(user["user_id"], demo_user["app_id"], 10.0, "Quick send")
+            
+            for demo_user in demo_users[:3]:  # Show first 3 demo users
+                col_a, col_b = st.columns([3, 1])
+                with col_a:
+                    st.write(f"**{demo_user['app_id']}**")
+                    st.caption(f"Balance: {format_money(demo_user['balance'])}")
+                with col_b:
+                    if st.button("💸", key=f"quick_{demo_user['user_id']}"):
+                        ok, msg = send_money(user["user_id"], demo_user["app_id"], 10.0, "Quick send!")
+                        if ok:
+                            toast_success(f"Sent $10 to {demo_user['app_id']}!")
+                            st.rerun()
+                        else:
+                            st.error(msg)
+            
+            st.markdown("---")
+            st.markdown("### Send Options")
+            
+            # Common amounts
+            amount_options = [5, 10, 25, 50, 100]
+            selected_amount = st.selectbox("Quick Amount", amount_options, key="quick_amount")
+            
+            if st.button(f"Send ${selected_amount}", key="quick_send_amount", use_container_width=True):
+                if not recipient:
+                    st.error("Enter a recipient first")
+                else:
+                    ok, msg = Break_Bread(user["user_id"], recipient, float(selected_amount), f"Quick send ${selected_amount}")
                     if ok:
-                        toast_success(f"Sent $10 to {demo_user['app_id']}")
+                        toast_success(f"Sent ${selected_amount} to {recipient}!")
                         st.rerun()
                     else:
                         st.error(msg)
     
     with tab2:
+        st.subheader("Request Money")
+        
         col1, col2 = st.columns(2)
+        
         with col1:
-            st.subheader("Request Money")
-            request_recipient = st.text_input("From (Username or Email)", key="request_recipient")
-            request_amount = st.number_input("Amount ($)", min_value=0.01, value=10.0, key="request_amount")
-            request_note = st.text_input("Note", key="request_note", value="Can you send me some money?")
-            
-            if st.button("Send Request", type="primary", key="request_btn"):
-                if not request_recipient:
-                    st.error("Please enter a recipient")
-                else:
-                    ok, msg = request_money(user["user_id"], request_recipient, request_amount, request_note)
-                    if ok:
-                        toast_success(msg)
-                        st.rerun()
+            with st.form("request_Break_Bread_form"):
+                st.markdown("### Create Money Request")
+                
+                request_recipient = st.text_input("From (Username or Email)", placeholder="friend@example.com", key="request_recipient")
+                request_amount = st.number_input("Amount ($)", min_value=0.01, value=25.0, step=5.0, key="request_amount")
+                request_note = st.text_area("Request Message", 
+                                          value="Can you send me some money?", 
+                                          placeholder="Explain what you need the money for...",
+                                          key="request_note",
+                                          height=80)
+                
+                # Optional due date
+                due_date = st.date_input("Due Date (Optional)", 
+                                       value=datetime.now().date() + timedelta(days=7),
+                                       key="request_due_date")
+                
+                submitted = st.form_submit_button("Send Request", type="primary", use_container_width=True)
+                
+                if submitted:
+                    if not request_recipient:
+                        st.error("Please enter a recipient")
                     else:
-                        st.error(msg)
+                        full_note = f"{request_note} (Due: {due_date})" if due_date else request_note
+                        ok, msg = request_money(user["user_id"], request_recipient, request_amount, full_note)
+                        if ok:
+                            toast_success(msg)
+                            add_notification(f"📥 Requested {format_money(request_amount)} from {request_recipient}")
+                            st.rerun()
+                        else:
+                            st.error(msg)
+        
+        with col2:
+            st.markdown("### Pending Requests")
+            
+            # Show pending requests for this user
+            user_requests = [r for r in st.session_state.requests if r["requestor_id"] == user["user_id"] and r["status"] == "pending"]
+            
+            if user_requests:
+                for req in user_requests[:5]:  # Show last 5 requests
+                    recipient_user = get_user(req["recipient_id"])
+                    if recipient_user:
+                        with st.container():
+                            st.markdown(f"""
+                            <div style='
+                                background-color: #1A1A1A;
+                                padding: 1rem;
+                                border-radius: 12px;
+                                border: 1px solid #333;
+                                margin-bottom: 0.5rem;
+                            '>
+                                <div style='display: flex; justify-content: space-between; align-items: center;'>
+                                    <div>
+                                        <strong>{recipient_user['app_id']}</strong>
+                                        <div style='color: #888; font-size: 0.8rem;'>{req['note']}</div>
+                                    </div>
+                                    <div style='text-align: right;'>
+                                        <div style='color: #FE8B00; font-weight: bold;'>{format_money(req['amount'])}</div>
+                                        <div style='color: #888; font-size: 0.7rem;'>{req['ts'].strftime('%m/%d')}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
+            else:
+                st.info("No pending money requests")
     
     with tab3:
+        st.subheader("Your Contacts")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("### Frequent Contacts")
+            
+            # Show other demo users as contacts
+            demo_contacts = [u for u in st.session_state.users.values() if u["user_id"] != user["user_id"]]
+            
+            for contact in demo_contacts:
+                with st.container():
+                    col_a, col_b, col_c = st.columns([3, 2, 1])
+                    with col_a:
+                        st.write(f"**{contact['app_id']}**")
+                        st.caption(contact['email'])
+                    with col_b:
+                        st.caption(f"Balance: {format_money(contact['balance'])}")
+                    with col_c:
+                        if st.button("Send", key=f"contact_send_{contact['user_id']}"):
+                            st.session_state.quick_contact = contact['app_id']
+                            st.rerun()
+        
+        with col2:
+            st.markdown("### Add New Contact")
+            
+            with st.form("add_contact_form"):
+                new_contact = st.text_input("Username or Email", placeholder="friend@example.com")
+                contact_name = st.text_input("Display Name (Optional)", placeholder="Friend's Name")
+                
+                if st.form_submit_button("Add Contact", use_container_width=True):
+                    if new_contact:
+                        # In a real app, you'd verify the user exists
+                        st.success(f"Contact request sent to {new_contact}")
+                        add_notification(f"👥 Contact request sent to {new_contact}")
+                    else:
+                        st.error("Please enter a username or email")
+    
+    with tab4:
         st.subheader("Transaction History")
-        # Show user's transactions
+        
+        # Filter options
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            time_filter = st.selectbox("Time Period", ["All Time", "Last 7 Days", "Last 30 Days", "Last 90 Days"])
+        with col2:
+            type_filter = st.selectbox("Transaction Type", ["All", "Sent", "Received"])
+        with col3:
+            search_term = st.text_input("Search", placeholder="Search notes...")
+        
+        # Show user's transactions with filters
         user_transactions = [t for t in st.session_state.transactions 
                            if t["sender_id"] == user["user_id"] or t["recipient_id"] == user["user_id"]]
+        
+        # Apply time filter
+        if time_filter != "All Time":
+            days = 7 if time_filter == "Last 7 Days" else 30 if time_filter == "Last 30 Days" else 90
+            cutoff_date = datetime.now() - timedelta(days=days)
+            user_transactions = [t for t in user_transactions if t["ts"] >= cutoff_date]
+        
+        # Apply type filter
+        if type_filter != "All":
+            if type_filter == "Sent":
+                user_transactions = [t for t in user_transactions if t["sender_id"] == user["user_id"]]
+            else:
+                user_transactions = [t for t in user_transactions if t["recipient_id"] == user["user_id"]]
+        
+        # Apply search filter
+        if search_term:
+            user_transactions = [t for t in user_transactions if search_term.lower() in t.get("note", "").lower()]
+        
         user_transactions.sort(key=lambda x: x["ts"], reverse=True)
         
         if user_transactions:
@@ -1370,26 +1563,54 @@ def show_banking(user):
                 if tx["sender_id"] == user["user_id"]:
                     direction = "Sent"
                     amount = f"-{format_money(tx['amount'])}"
+                    amount_color = "#FF4444"
                     counterparty = get_user(tx["recipient_id"])["app_id"]
+                    icon = "↗️"
                 else:
                     direction = "Received"
                     amount = f"+{format_money(tx['amount'])}"
+                    amount_color = "#00D54B"
                     counterparty = get_user(tx["sender_id"])["app_id"]
+                    icon = "↙️"
                 
                 transaction_data.append({
                     "Date": tx["ts"].strftime("%Y-%m-%d %H:%M"),
                     "Type": direction,
                     "Counterparty": counterparty,
                     "Amount": amount,
+                    "AmountColor": amount_color,
+                    "Icon": icon,
                     "Note": tx.get("note", "")
                 })
             
-            st.dataframe(pd.DataFrame(transaction_data), use_container_width=True)
+            # Display transactions with better styling
+            for tx in transaction_data:
+                with st.container():
+                    st.markdown(f"""
+                    <div style='
+                        background-color: #1A1A1A;
+                        padding: 1rem;
+                        border-radius: 12px;
+                        border: 1px solid #333;
+                        margin-bottom: 0.5rem;
+                    '>
+                        <div style='display: flex; justify-content: space-between; align-items: center;'>
+                            <div style='display: flex; align-items: center; gap: 0.5rem;'>
+                                <span style='font-size: 1.2rem;'>{tx['Icon']}</span>
+                                <div>
+                                    <div style='font-weight: bold;'>{tx['Counterparty']}</div>
+                                    <div style='color: #888; font-size: 0.8rem;'>{tx['Note']}</div>
+                                </div>
+                            </div>
+                            <div style='text-align: right;'>
+                                <div style='color: {tx['AmountColor']}; font-weight: bold; font-size: 1.1rem;'>{tx['Amount']}</div>
+                                <div style='color: #888; font-size: 0.7rem;'>{tx['Date']}</div>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
         else:
-            st.info("No transactions yet. Send or request money to get started!")
-
-# ... (rest of your existing functions remain the same - show_markets, show_portfolio, show_settings, etc.)
-
+            st.info("No transactions found. Send or request money to get started!")
 def show_stocks_etfs():
     st.subheader("📊 Stocks & ETFs")
     
