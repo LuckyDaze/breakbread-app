@@ -859,12 +859,12 @@ def _clean_symbol(text: str) -> str:
     return (text or "").strip().upper()
 
 def show_login():
-    # ADDED LOGO CODE HERE - This is the right place for it
+    # Centered logo on login page
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        # Display your logo image
-        st.image("assets/breakbread-logo.png", width=512)  # Reduced width for better fit
-        st.markdown("<h3 style='text-align: center; font-size:36px;'><b><i>Break Bread. Build Wealth.</i></b></h3>", unsafe_allow_html=True)
+        st.image("assets/breakbread-logo.png", width=400)
+        st.markdown("<h1 style='text-align: center; color: #FE8B00; font-size: 3.5rem; font-weight: 700;'>Break Bread</h1>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: #FFFFFF; margin-bottom: 3rem;'>Build Wealth Together</h3>", unsafe_allow_html=True)
     
     st.header("Welcome to Break Bread")
 
