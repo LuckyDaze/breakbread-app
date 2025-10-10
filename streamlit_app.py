@@ -1305,14 +1305,14 @@ def show_banking(user):
     tab1, tab2, tab3, tab4 = st.tabs(["💸 **Break Bread**", "📥 **Request Money**", "👥 **Contacts**", "📊 **History**"])
     
     with tab1:
-        st.subheader("Break Bread with Family & Friends")
+        st.subheader("Send Money")
         
         col1, col2 = st.columns([2, 1])
         
         with col1:
             # Send Money Form
             with st.form("send_Break_Bread_form"):
-                st.markdown("### Break Bread")
+                st.markdown("### Send Payment")
                 
                 # Recipient selection
                 recipient_type = st.radio(
