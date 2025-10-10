@@ -1009,9 +1009,18 @@ def show_banking(user):
 def show_markets(user):
     st.header("📈 Multi-Asset Markets")
     
-    # Quick asset categories
-    st.subheader("Asset Classes")
-    asset_tabs = st.tabs(["Stocks & ETFs", "Crypto", "Bonds & Treasuries", "Alternative Investments"])
+    # Expanded investment categories
+    asset_tabs = st.tabs([
+        "Stocks & ETFs", 
+        "Crypto", 
+        "Bonds & Treasuries",
+        "Treasury Bonds",  # New tab
+        "Precious Metals",  # New tab
+        "Startup Investing",  # New tab
+        "Business Marketplace",  # New tab
+        "Royalty Investing",  # New tab
+        "Municipal Bonds"  # New tab
+    ])
     
     with asset_tabs[0]:
         show_stocks_etfs()
@@ -1023,45 +1032,414 @@ def show_markets(user):
         show_bonds_treasuries()
     
     with asset_tabs[3]:
-        show_alternative_investments()
+        show_treasury_bonds()
+    
+    with asset_tabs[4]:
+        show_precious_metals()
+    
+    with asset_tabs[5]:
+        show_startup_investing()
+    
+    with asset_tabs[6]:
+        show_business_marketplace()
+    
+    with asset_tabs[7]:
+        show_royalty_investing()
+    
+    with asset_tabs[8]:
+        show_municipal_bonds()
     
     # Universal research tool
     st.markdown("---")
     show_universal_research()
 
-def show_stocks_etfs():
-    st.subheader("📊 Stocks & ETFs")
+# New Treasury Bonds Tab
+def show_treasury_bonds():
+    st.subheader("🇺🇸 U.S. Treasury Bonds")
     
-    # Major indices
-    st.write("**Major Indices**")
-    indices = get_major_indices()
-    cols = st.columns(len(indices))
+    col1, col2 = st.columns([2, 1])
     
-    for i, index in enumerate(indices):
-        with cols[i]:
-            delta_color = "normal"  # Let Streamlit decide based on value
-            st.metric(
-                label=index['name'],
-                value=f"${index['price']:,.2f}",
-                delta=f"{index['change_percent']:+.2f}%",
-                delta_color=delta_color
-            )
-            st.caption(f"Source: {index.get('source', 'Yahoo Finance')}")
+    with col1:
+        st.markdown("""
+        ### About Treasury Bonds
+        U.S. Treasury bonds are debt securities issued by the federal government 
+        to finance government spending. They are considered among the safest investments 
+        because they are backed by the full faith and credit of the U.S. government.
+        
+        **Key Features:**
+        - Backed by U.S. government
+        - Tax advantages (exempt from state/local taxes)
+        - Various maturities (4 weeks to 30 years)
+        - Regular interest payments
+        """)
+        
+        # Current Treasury Rates
+        st.subheader("Current Treasury Rates")
+        treasury_data = get_treasury_yields()
+        if treasury_data:
+            t1, t2, t3 = st.columns(3)
+            with t1:
+                st.metric("4-Week Bill", f"{treasury_data.get('4_week', 5.25):.2f}%")
+            with t2:
+                st.metric("2-Year Note", f"{treasury_data.get('2_year', 4.89):.2f}%")
+            with t3:
+                st.metric("10-Year Bond", f"{treasury_data.get('10_year', 4.45):.2f}%")
+    
+    with col2:
+        st.markdown("### How to Invest")
+        st.info("""
+        **TreasuryDirect.gov**
+        - Direct purchase from U.S. Treasury
+        - No fees or commissions
+        - Minimum investment: $100
+        - Automatic reinvestment available
+        """)
+        
+        if st.button("🪙 Visit TreasuryDirect", use_container_width=True):
+            st.markdown("[Open TreasuryDirect.gov](https://www.treasurydirect.gov/)")
+        
+        st.markdown("### Investment Options")
+        st.write("""
+        - **Treasury Bills**: 4 weeks to 1 year
+        - **Treasury Notes**: 2 to 10 years  
+        - **Treasury Bonds**: 20 to 30 years
+        - **TIPS**: Inflation-protected
+        - **Floating Rate Notes**: Variable interest
+        """)
 
-    # Popular stocks
-    st.write("**Popular Stocks**")
-    popular_stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META']
-    stock_cols = st.columns(3)
+# New Precious Metals Tab
+def show_precious_metals():
+    st.subheader("🥇 Precious Metals Investing")
     
-    for i, symbol in enumerate(popular_stocks):
-        with stock_cols[i % 3]:
-            data = get_stock_data(symbol, '1d')
-            if data:
-                st.metric(
-                    label=symbol,
-                    value=f"${data['current_price']:,.2f}",
-                    delta=f"{data['change_percent']:+.2f}%"
-                )
+    # Current Metals Prices
+    metals_data = get_metals_prices()
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.markdown("""
+        ### Why Invest in Precious Metals?
+        Precious metals can provide portfolio diversification and act as a hedge 
+        against inflation and economic uncertainty.
+        
+        **Common Investment Options:**
+        - Physical bullion (coins, bars)
+        - ETFs and mutual funds
+        - Mining company stocks
+        - Futures and options
+        """)
+        
+        # Current Prices
+        st.subheader("Current Spot Prices")
+        if metals_data:
+            m1, m2, m3 = st.columns(3)
+            with m1:
+                if 'gold' in metals_data:
+                    st.metric("Gold", f"${metals_data['gold']['price']:,.2f}/oz")
+            with m2:
+                if 'silver' in metals_data:
+                    st.metric("Silver", f"${metals_data['silver']['price']:,.2f}/oz")
+            with m3:
+                if 'platinum' in metals_data:
+                    st.metric("Platinum", f"${metals_data['platinum']['price']:,.2f}/oz")
+    
+    with col2:
+        st.markdown("### Trusted Platforms")
+        
+        st.info("""
+        **APMEX** - Largest online precious metals dealer
+        - Huge selection of coins and bars
+        - Competitive pricing
+        - Secure storage options
+        """)
+        
+        if st.button("🪙 Visit APMEX", use_container_width=True):
+            st.markdown("[Open APMEX.com](https://www.apmex.com/)")
+        
+        st.markdown("### Learning Resources")
+        if st.button("📚 APMEX Learning Center", use_container_width=True):
+            st.markdown("[Open APMEX Learning Center](https://learn.apmex.com/)")
+
+# New Startup Investing Tab
+def show_startup_investing():
+    st.subheader("🚀 Startup & Equity Crowdfunding")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.markdown("""
+        ### Invest in Innovation
+        Equity crowdfunding allows everyday investors to buy shares in startups 
+        and early-stage companies.
+        
+        **SEC Regulations:**
+        - Non-accredited investors can participate
+        - Investment limits based on income/net worth
+        - 12-month limit: 5-10% of income/net worth
+        - Platforms must be SEC-registered
+        """)
+        
+        st.warning("""
+        **High Risk Warning:** Startup investing is speculative and carries 
+        substantial risk of loss. Most startups fail. Only invest money 
+        you can afford to lose completely.
+        """)
+        
+        # Investment Limits Info
+        st.subheader("Investment Limits")
+        st.write("""
+        **Based on annual income/net worth:**
+        - If either is < $124,000: **$2,500** or 5% of greater amount
+        - If both are ≥ $124,000: **$124,000** or 10% of annual income/net worth
+        - Maximum across all platforms: **$124,000** per year
+        """)
+    
+    with col2:
+        st.markdown("### Leading Platforms")
+        
+        platforms = [
+            ("Wefunder", "https://wefunder.com/", "Community-focused, diverse startups"),
+            ("StartEngine", "https://www.startengine.com/explore", "Tech and innovation focus"),
+            ("Republic", "https://republic.com/", "Curated selection, various sectors"),
+            ("AngelList", "https://venture.angellist.com/v/start-investing", "VC-backed startups")
+        ]
+        
+        for name, url, description in platforms:
+            st.info(f"**{name}**\n\n{description}")
+            if st.button(f"Visit {name}", key=f"btn_{name}"):
+                st.markdown(f"[Open {name}]({url})")
+        
+        st.markdown("### Resources")
+        if st.button("📊 SEC Crowdfunding Guide", use_container_width=True):
+            st.markdown("[Open SEC Guide](https://www.sec.gov/oiea/investor-alerts-bulletins/ib_crowdfunding-.html)")
+        
+        if st.button("📈 Forbes Startup Guide", use_container_width=True):
+            st.markdown("[Open Forbes Guide](https://www.forbes.com/advisor/investing/invest-in-startups/)")
+
+# New Business Marketplace Tab
+def show_business_marketplace():
+    st.subheader("🏢 Business Acquisition Marketplace")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.markdown("""
+        ### Buy an Established Business
+        Acquiring an existing business can provide immediate cash flow, 
+        established operations, and proven business models.
+        
+        **Advantages vs Startups:**
+        - Existing customer base
+        - Proven revenue streams
+        - Established systems and processes
+        - Historical financial data
+        - Trained employees
+        """)
+        
+        st.subheader("Business Types Available")
+        st.write("""
+        - **Main Street Businesses**: $100K - $5M valuation
+        - **Small Manufacturing**: $1M - $10M revenue
+        - **Service Businesses**: Consulting, agencies, contractors
+        - **Franchises**: Brand recognition with support
+        - **E-commerce**: Online stores with established traffic
+        """)
+    
+    with col2:
+        st.markdown("### Marketplace Platform")
+        
+        st.info("""
+        **BizBuySell** - Largest business marketplace
+        - 45,000+ businesses for sale
+        - All industries and price ranges
+        - Confidential listing process
+        - Business valuation tools
+        """)
+        
+        if st.button("🏢 Browse Businesses", use_container_width=True):
+            st.markdown("[Open BizBuySell](https://www.bizbuysell.com/)")
+        
+        st.markdown("### Due Diligence Checklist")
+        st.write("""
+        ✅ Financial records (3+ years)
+        ✅ Customer concentration
+        ✅ Market position & competition
+        ✅ Legal and compliance status
+        ✅ Employee and supplier contracts
+        ✅ Physical assets condition
+        """)
+
+# New Royalty Investing Tab
+def show_royalty_investing():
+    st.subheader("🎵 Royalty & Intellectual Property Investing")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.markdown("""
+        ### Invest in Royalties
+        Royalty investing allows you to earn income from intellectual property 
+        like music, patents, film rights, and trademarks.
+        
+        **How It Works:**
+        - Purchase a share of future royalty streams
+        - Receive regular income payments
+        - No active management required
+        - Diversification from traditional assets
+        """)
+        
+        st.subheader("Royalty Types")
+        st.write("""
+        - **Music Royalties**: Songwriting, publishing, master recordings
+        - **Patent Royalties**: Technology, pharmaceuticals, inventions  
+        - **Film & TV Royalties**: Streaming rights, syndication
+        - **Mineral Royalties**: Oil, gas, mining rights
+        - **Brand Royalties**: Trademarks, franchising
+        """)
+        
+        # Example Royalty Returns
+        st.subheader("Typical Returns")
+        returns_data = {
+            "Music Catalogs": "8-12%",
+            "Patent Portfolios": "12-20%", 
+            "Film Libraries": "6-10%",
+            "Mineral Rights": "8-15%"
+        }
+        
+        for asset_type, returns in returns_data.items():
+            st.write(f"**{asset_type}**: {returns}")
+    
+    with col2:
+        st.markdown("### Platform Access")
+        
+        st.info("""
+        **Royalty Exchange** - Leading royalty marketplace
+        - Vetted royalty offerings
+        - Transparent bidding process
+        - Secondary market liquidity
+        - Professional due diligence
+        """)
+        
+        if st.button("🎵 Browse Royalties", use_container_width=True):
+            st.markdown("[Open Royalty Exchange](https://www.royaltyexchange.com/)")
+        
+        st.markdown("### Investment Considerations")
+        st.write("""
+        **Pros:**
+        - Passive income streams
+        - Portfolio diversification
+        - Inflation hedging potential
+        - Non-correlated returns
+        
+        **Cons:**
+        - Limited liquidity
+        - Complex valuation
+        - Industry-specific risks
+        - Due diligence intensive
+        """)
+
+# New Municipal Bonds Tab
+def show_municipal_bonds():
+    st.subheader("🏛️ Municipal Bonds")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.markdown("""
+        ### Invest in Local Communities
+        Municipal bonds are debt securities issued by state and local governments 
+        to fund public projects like schools, roads, and infrastructure.
+        
+        **Key Benefits:**
+        - Tax-free interest (federal and often state)
+        - Generally high credit quality
+        - Regular interest payments
+        - Support community development
+        """)
+        
+        st.subheader("Municipal Bond Types")
+        st.write("""
+        - **General Obligation (GO) Bonds**: Backed by taxing power
+        - **Revenue Bonds**: Backed by project revenues  
+        - **Taxable Munis**: For certain projects, taxable interest
+        - **Zero-Coupon Munis**: Purchased at discount, no regular interest
+        - **Build America Bonds**: Federal subsidy for infrastructure
+        """)
+    
+    with col2:
+        st.markdown("### Market Access")
+        
+        st.info("""
+        **MunicipalBonds.com** - Comprehensive muni platform
+        - Real-time bond pricing
+        - Credit analysis tools
+        - Tax-equivalent yield calculator
+        - Educational resources
+        """)
+        
+        if st.button("🏛️ Browse Muni Bonds", use_container_width=True):
+            st.markdown("[Open MunicipalBonds.com](https://www.municipalbonds.com/)")
+        
+        st.markdown("### Risk Assessment")
+        st.write("""
+        **Credit Risks:**
+        - Issuer financial health
+        - Economic conditions
+        - Tax base stability
+        - Project viability
+        
+        **Market Risks:**
+        - Interest rate changes
+        - Inflation expectations
+        - Liquidity constraints
+        - Call provisions
+        """)
+        
+        st.markdown("### Resources")
+        if st.button("📚 Learn About Muni Bonds", use_container_width=True):
+            st.markdown("[Open Investopedia Guide](https://www.investopedia.com/terms/m/municipalbond.asp)")
+
+# Update the existing bonds tab to focus on government bonds
+def show_bonds_treasuries():
+    st.subheader("📋 Government Bonds & Fixed Income")
+    
+    treasury_data = get_treasury_yields()
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.markdown("""
+        ### Fixed Income Overview
+        Government bonds provide stable income with varying levels of risk 
+        and return profiles across different maturities.
+        """)
+        
+        # Current Yields
+        st.subheader("Current Government Yields")
+        if treasury_data:
+            t1, t2, t3 = st.columns(3)
+            with t1:
+                st.metric("1-Month Treasury", f"{treasury_data['1_month']:.2f}%")
+            with t2:
+                st.metric("2-Year Treasury", f"{treasury_data['2_year']:.2f}%")
+            with t3:
+                st.metric("10-Year Treasury", f"{treasury_data['10_year']:.2f}%")
+            
+            st.caption(f"Source: {treasury_data['source']} | Updated: {treasury_data['last_updated']}")
+    
+    with col2:
+        st.markdown("### Quick Access")
+        st.write("""
+        **Explore More:**
+        - **Treasury Bonds** → Full government bond access
+        - **Municipal Bonds** → Tax-advantaged local bonds
+        - **Corporate Bonds** → Higher yields (coming soon)
+        """)
+        
+        st.info("""
+        **Yield Curve Insight:**
+        Monitor the relationship between short and long-term rates for economic signals.
+        """)
 
 def show_crypto_assets():
     st.subheader("₿ Cryptocurrencies")
