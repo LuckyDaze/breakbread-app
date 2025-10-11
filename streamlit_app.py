@@ -204,7 +204,7 @@ st.markdown("""
 # ----------------------------
 st.set_page_config(
     page_title="Break Bread",
-    page_icon="assets/favicon.png",
+    page_icon="🍞",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -708,8 +708,8 @@ def show_login():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.image("assets/breakbread-logo.png", width=400)
-        st.markdown("<h1 style='text-align: center; color: #FE8B00; font-size: 3.5rem; font-weight: 700;'>Break Bread Build Wealt</h1>", unsafe_allow_html=True)
-       
+        st.markdown("<h1 style='text-align: center; color: #FE8B00; font-size: 3.5rem; font-weight: 700;'>Break Bread</h1>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: #FFFFFF; margin-bottom: 3rem;'>Build Wealth Together</h3>", unsafe_allow_html=True)
     
     st.header("Welcome to Break Bread")
 
@@ -941,19 +941,53 @@ def show_main_app():
     else:
         show_dashboard(user)
 
-# ... (rest of the functions would continue here)
+# ADD THE MISSING FUNCTIONS
 
-def main():
-    # Initialize demo users
-    ensure_demo_users()
+def show_dashboard(user):
+    """Show the main dashboard."""
+    st.header("Dashboard")
     
-    # Auth gate
-    if not st.session_state.get("auth_user"):
-        show_login()
-        return
+    # Header with balance
+    total_balance = portfolio_value(user["user_id"]) + user["balance"]
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown(f"""
+        <div style='
+            background: linear-gradient(135deg, #FE8B00 0%, #FF9A2D 100%);
+            padding: 2.5rem;
+            border-radius: 24px;
+            text-align: center;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(254, 139, 0, 0.3);
+        '>
+            <h3 style='color: #000000; margin: 0; font-size: 1.1rem; font-weight: 600; opacity: 0.9;'>TOTAL BALANCE</h3>
+            <h1 style='color: #000000; margin: 1rem 0; font-size: 3rem; font-weight: 700; letter-spacing: -0.02em;'>{format_money(total_balance)}</h1>
+            <div style='
+                display: inline-block;
+                background: rgba(0, 0, 0, 0.2);
+                padding: 8px 16px;
+                border-radius: 20px;
+                margin-top: 0.5rem;
+            '>
+                <p style='color: #000000; margin: 0; font-size: 0.9rem; font-weight: 600;'>Break Bread</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-    show_main_app()
-
-if __name__ == "__main__":
-    main
-        ()
+    # Quick Actions
+    st.subheader("Quick Actions")
+    actions_col1, actions_col2, actions_col3, actions_col4 = st.columns(4)
+    
+    with actions_col1:
+        if st.button("💸 Send Money", use_container_width=True):
+            st.session_state.app_nav_radio = "Banking"
+            st.rerun()
+    
+    with actions_col2:
+        if st.button("📈 Invest", use_container_width=True):
+            st.session_state.app_nav_radio = "Markets"
+            st.rerun()
+    
+    with actions_col3:
+        if st.button("💰 Deposit", use
