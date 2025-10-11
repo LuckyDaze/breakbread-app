@@ -991,7 +991,8 @@ def show_dashboard(user):
     
     with actions_col3:
         if st.button("💰 Deposit", use_container_width=True, type="primary"):
-    ok, _ = simulate_paycheck(user["user_id"])
-    if ok:
-        toast_success("💰 $2,000 added to your balance!")
-        st.rerun()
+            ok, _ = simulate_paycheck(user["user_id"])
+            if ok:
+                toast_success("💰 $2,000 added to your balance!")
+                st.rerun()
+
