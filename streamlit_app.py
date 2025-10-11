@@ -708,8 +708,8 @@ def show_login():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.image("assets/breakbread-logo.png", width=400)
-        st.markdown("<h1 style='text-align: center; color: #FE8B00; font-size: 3.5rem; font-weight: 700;'>Break Bread</h1>", unsafe_allow_html=True)
-        st.markdown("<h3 style='text-align: center; color: #FFFFFF; margin-bottom: 3rem;'>Build Wealth Together</h3>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; color: #FE8B00; font-size: 3.5rem; font-weight: 700;'>Break Bread Build Wealt</h1>", unsafe_allow_html=True)
+       
     
     st.header("Welcome to Break Bread")
 
@@ -955,4 +955,5 @@ def main():
     show_main_app()
 
 if __name__ == "__main__":
-    main()
+    main
+        ()
