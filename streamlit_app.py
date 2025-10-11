@@ -976,6 +976,7 @@ def show_dashboard(user):
         """, unsafe_allow_html=True)
 
     # Quick Actions
+        # Quick Actions
     st.subheader("Quick Actions")
     actions_col1, actions_col2, actions_col3, actions_col4 = st.columns(4)
     
@@ -995,4 +996,3 @@ def show_dashboard(user):
             if ok:
                 toast_success("💰 $2,000 added to your balance!")
                 st.rerun()
-
