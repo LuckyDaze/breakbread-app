@@ -782,4 +782,101 @@ def show_banking(user):
         with c2:
             st.subheader("Quick Send")
             for demo_user in [u for u in st.session_state.users.values() if u["user_id"] != user["user_id"]][:2]:
-                if st.button(f"Send $10 to {demo_user['app_id']}", key=f"quick_{demo_user['user_id']}", type="primary
+                if st.button(f"Send $10 to {demo_user['app_id']}", key=f"quick_{demo_user['user_id']}", type="primary"):
+                    if send_money(user["user_id"], demo_user["app_id"], 10.0)[0]: st.rerun()
+    
+    with tab2:
+        txs = [t for t in st.session_state.transactions if user["user_id"] in [t["sender_id"], t["recipient_id"]]]
+        if txs:
+            data = []
+            for tx in txs:
+                ttype = "Sent" if tx["sender_id"] == user["user_id"] else "Received"
+                data.append({"Date": tx["ts"].strftime("%Y-%m-%d"), "Type": ttype, "Amount": format_money(tx['amount'])})
+            st.dataframe(pd.DataFrame(data), use_container_width=True)
+        else:
+            st.info("No transactions yet.")
+            
+    with tab3:
+        st.subheader("🤝 SuSu / Group Pooling")
+        st.write("Join or manage rotating savings groups, track contributions, and handle payouts.")
+        
+        if st.button("➕ Create New SuSu Group", use_container_width=True):
+            st.success("Redirecting to group creation...")
+            
+        st.markdown("### Your SuSu Groups")
+        
+        st.markdown("""
+        <div style='background-color: #1A1A1A; padding: 1.5rem; border-radius: 16px; border: 1px solid #333; margin-bottom: 1rem;'>
+            <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;'>
+                <h3 style='color: #FFFFFF; margin: 0;'>DJ Bowl 38 Fund</h3>
+                <span style='background-color: rgba(254, 139, 0, 0.2); color: #FE8B00; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem;'>Admin</span>
+            </div>
+            <div style='display: flex; justify-content: space-between; margin-bottom: 0.5rem;'>
+                <span style='color: #888;'>Contribution:</span>
+                <span style='color: #FFF; font-weight: bold;'>$250.00 / month</span>
+            </div>
+            <div style='display: flex; justify-content: space-between; margin-bottom: 1.5rem;'>
+                <span style='color: #888;'>Next Payout:</span>
+                <span style='color: #FFF; font-weight: bold;'>July 15, 2026</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button("Collect Contributions / Issue Payout", type="primary", use_container_width=True):
+            st.success("Payout initiated to DJ Bowl 38 Fund participants!")
+
+def show_markets(user):
+    col1, col2 = st.columns([5, 1])
+    with col1: st.header("📈 Multi-Asset Markets")
+    with col2:
+        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+        if st.button("⬅️ Home", key="home_btn_markets", use_container_width=True, type="primary"):
+            st.session_state.app_nav_radio = "Dashboard"
+            st.rerun()
+    
+    asset_tabs = st.tabs([
+        "Stocks & ETFs", "Crypto", "Bonds & Treasuries", "Treasury Bonds", 
+        "Precious Metals", "Startup Investing", "Business Marketplace", 
+        "Royalty Investing", "Municipal Bonds"
+    ])
+    
+    with asset_tabs[0]: show_stocks_etfs()
+    with asset_tabs[1]: show_crypto_assets()
+    with asset_tabs[2]: show_bonds_treasuries()
+    with asset_tabs[3]: show_treasury_bonds()
+    with asset_tabs[4]: show_precious_metals()
+    with asset_tabs[5]: show_startup_investing()
+    with asset_tabs[6]: show_business_marketplace()
+    with asset_tabs[7]: show_royalty_investing()
+    with asset_tabs[8]: show_municipal_bonds()
+    
+    st.markdown("---")
+    show_universal_research()
+
+def show_settings(user):
+    col1, col2 = st.columns([5, 1])
+    with col1: st.header("⚙️ Settings")
+    with col2:
+        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+        if st.button("⬅️ Home", key="home_btn_settings", use_container_width=True, type="primary"):
+            st.session_state.app_nav_radio = "Dashboard"
+            st.rerun()
+    
+    st.write(f"**Username:** {user['app_id']}\n**Email:** {user['email']}")
+    dark_mode = st.toggle("Dark Mode", value=True)
+    if st.button("Save Preferences", type="primary"): st.success("Saved!")
+    st.divider()
+    if st.button("Logout", type="secondary"): logout()
+
+# ----------------------------
+# Main App
+# ----------------------------
+def main():
+    ensure_demo_users()
+    if not st.session_state.get("auth_user"):
+        show_login()
+        return
+    show_main_app()
+
+if __name__ == "__main__":
+    main()
