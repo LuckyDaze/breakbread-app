@@ -1,0 +1,454 @@
+```python
+
+import os
+
+import jwt
+
+import bcrypt
+
+import psycopg2
+
+from psycopg2.extras import RealDictCursor
+
+from fastapi import FastAPI, HTTPException, Depends, status
+
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+from pydantic import BaseModel
+
+from plaid.api import plaid_api
+
+from plaid import Configuration, ApiClient
+
+from plaid.model.link_token_create_request import LinkTokenCreateRequest
+
+from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchangeRequest
+
+from plaid.model.accounts_get_request import AccountsGetRequest
+
+from plaid.model.transactions_sync_request import TransactionsSyncRequest
+
+from dotenv import load_dotenv
+
+from datetime import datetime, timedelta
+
+import uuid
+
+
+
+load_dotenv()
+
+
+
+# ---- Database connection ----
+
+def get_db_connection():
+
+return psycopg2.connect(os.environ["DATABASE_URL"], cursor_factory=RealDictCursor)
+
+
+
+# ---- Plaid setup ----
+
+plaid_config = Configuration(
+
+host="https://sandbox.plaid.com",
+
+api_key={
+
+"clientId": os.environ["PLAID_CLIENT_ID"],
+
+"secret": os.environ["PLAID_SECRET"],
+
+}
+
+)
+
+api_client = ApiClient(plaid_config)
+
+plaid_client = plaid_api.PlaidApi(api_client)
+
+
+
+# ---- JWT setup ----
+
+SECRET_KEY = os.environ["JWT_SECRET_KEY"]
+
+ALGORITHM = "HS256"
+
+security = HTTPBearer()
+
+
+
+def create_jwt(user_id: str) -> str:
+
+payload = {
+
+"sub": user_id,
+
+"exp": datetime.utcnow() + timedelta(days=1)
+
+}
+
+return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+
+def decode_jwt(token: str) -> dict:
+
+try:
+
+return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
+except jwt.PyJWTError:
+
+raise HTTPException(status_code=401, detail="Invalid token")
+
+
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+
+token = credentials.credentials
+
+payload = decode_jwt(token)
+
+user_id = payload.get("sub")
+
+if not user_id:
+
+raise HTTPException(status_code=401, detail="Invalid token")
+
+return user_id
+
+
+
+# ---- Pydantic models ----
+
+class UserCreate(BaseModel):
+
+app_id: str
+
+email: str
+
+password: str
+
+full_name: str = None
+
+
+
+class UserLogin(BaseModel):
+
+username: str
+
+password: str
+
+
+
+class LinkTokenRequest(BaseModel):
+
+user_id: str # will come from JWT normally
+
+
+
+class PublicTokenExchange(BaseModel):
+
+public_token: str
+
+user_id: str
+
+
+
+# ---- API endpoints ----
+
+app = FastAPI()
+
+
+
+@app.post("/register")
+
+def register(user: UserCreate):
+
+conn = get_db_connection()
+
+cur = conn.cursor()
+
+# Check existing
+
+cur.execute("SELECT user_id FROM users WHERE app_id = %s OR email = %s", (user.app_id, user.email))
+
+if cur.fetchone():
+
+raise HTTPException(status_code=400, detail="Username or email already exists")
+
+# Hash password
+
+hashed = bcrypt.hashpw(user.password.encode(), bcrypt.gensalt()).decode()
+
+cur.execute(
+
+"INSERT INTO users (app_id, email, password_hash, full_name) VALUES (%s, %s, %s, %s) RETURNING user_id",
+
+(user.app_id, user.email, hashed, user.full_name)
+
+)
+
+new_user = cur.fetchone()
+
+conn.commit()
+
+cur.close()
+
+conn.close()
+
+# Return JWT
+
+token = create_jwt(str(new_user["user_id"]))
+
+return {"access_token": token, "token_type": "bearer"}
+
+
+
+@app.post("/login")
+
+def login(creds: UserLogin):
+
+conn = get_db_connection()
+
+cur = conn.cursor()
+
+cur.execute("SELECT user_id, password_hash FROM users WHERE app_id = %s OR email = %s", (creds.username, creds.username))
+
+user = cur.fetchone()
+
+cur.close()
+
+conn.close()
+
+if not user or not bcrypt.checkpw(creds.password.encode(), user["password_hash"].encode()):
+
+raise HTTPException(status_code=401, detail="Invalid credentials")
+
+token = create_jwt(str(user["user_id"]))
+
+return {"access_token": token, "token_type": "bearer"}
+
+
+
+@app.post("/create_link_token")
+
+def create_link_token(current_user: str = Depends(get_current_user)):
+
+# Generate a link_token for the logged-in user
+
+request = LinkTokenCreateRequest(
+
+user={"client_user_id": current_user},
+
+client_name="Break Bread Bank",
+
+products=["auth", "transactions"],
+
+country_codes=["US"],
+
+language="en"
+
+)
+
+response = plaid_client.link_token_create(request)
+
+return {"link_token": response["link_token"]}
+
+
+
+@app.post("/exchange_public_token")
+
+def exchange_token(exchange: PublicTokenExchange, current_user: str = Depends(get_current_user)):
+
+# Ensure user_id matches the JWT user
+
+if exchange.user_id != current_user:
+
+raise HTTPException(status_code=403, detail="User mismatch")
+
+request = ItemPublicTokenExchangeRequest(public_token=exchange.public_token)
+
+response = plaid_client.item_public_token_exchange(request)
+
+access_token = response["access_token"]
+
+item_id = response["item_id"]
+
+
+
+# Get institution name
+
+conn = get_db_connection()
+
+cur = conn.cursor()
+
+# Store in plaid_items
+
+cur.execute(
+
+"INSERT INTO plaid_items (user_id, plaid_access_token, plaid_item_id) VALUES (%s, %s, %s) RETURNING item_id",
+
+(current_user, access_token, item_id)
+
+)
+
+item_uuid = cur.fetchone()["item_id"]
+
+conn.commit()
+
+
+
+# Fetch accounts immediately
+
+acc_request = AccountsGetRequest(access_token=access_token)
+
+acc_response = plaid_client.accounts_get(acc_request)
+
+for acc in acc_response["accounts"]:
+
+cur.execute(
+
+"""INSERT INTO plaid_accounts (item_id, plaid_account_id, name, mask, type, subtype, balance_current)
+
+VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+
+(item_uuid, acc["account_id"], acc["name"], acc.get("mask"), acc["type"], acc.get("subtype"), acc["balances"]["current"] or 0)
+
+)
+
+conn.commit()
+
+cur.close()
+
+conn.close()
+
+return {"status": "success", "item_id": item_id}
+
+
+
+@app.get("/accounts")
+
+def get_linked_accounts(current_user: str = Depends(get_current_user)):
+
+conn = get_db_connection()
+
+cur = conn.cursor()
+
+cur.execute("""
+
+SELECT pa.name, pa.mask, pa.type, pa.subtype, pa.balance_current, pi.institution_name
+
+FROM plaid_accounts pa
+
+JOIN plaid_items pi ON pa.item_id = pi.item_id
+
+WHERE pi.user_id = %s
+
+""", (current_user,))
+
+accounts = cur.fetchall()
+
+cur.close()
+
+conn.close()
+
+return accounts
+
+
+
+@app.get("/transactions")
+
+def get_transactions(current_user: str = Depends(get_current_user)):
+
+# For simplicity, return internal transactions + Plaid transactions
+
+conn = get_db_connection()
+
+cur = conn.cursor()
+
+# Internal (p2p) transactions
+
+cur.execute("""
+
+SELECT t.ts, t.amount, t.note,
+
+CASE WHEN t.sender_id = %s THEN 'sent' ELSE 'received' END as direction,
+
+u.app_id as counterparty
+
+FROM transactions t
+
+LEFT JOIN users u ON (CASE WHEN t.sender_id = %s THEN t.recipient_id ELSE t.sender_id END) = u.user_id
+
+WHERE t.sender_id = %s OR t.recipient_id = %s
+
+ORDER BY t.ts DESC LIMIT 50
+
+""", (current_user, current_user, current_user, current_user))
+
+internal = cur.fetchall()
+
+
+
+# Plaid transactions (requires syncing - simplified)
+
+# In production you'd sync via webhooks or background job
+
+cur.execute("SELECT plaid_access_token FROM plaid_items WHERE user_id = %s", (current_user,))
+
+items = cur.fetchall()
+
+external_txs = []
+
+for item in items:
+
+access_token = item["plaid_access_token"]
+
+# Use transactions_sync (handles incremental updates)
+
+request = TransactionsSyncRequest(access_token=access_token)
+
+response = plaid_client.transactions_sync(request)
+
+for tx in response["added"]:
+
+external_txs.append({
+
+"ts": tx["date"],
+
+"amount": -tx["amount"] if tx["amount"] > 0 else tx["amount"], # Plaid signs: positive outflow
+
+"name": tx["name"],
+
+"direction": "external"
+
+})
+
+cur.close()
+
+conn.close()
+
+all_txs = list(internal) + external_txs
+
+all_txs.sort(key=lambda x: x["ts"], reverse=True)
+
+return all_txs[:100]
+
+
+
+if __name__ == "__main__":
+
+import uvicorn
+
+uvicorn.run(app, host="0.0.0.0", port=8000)
+
+```
+
+
+
+---
+
