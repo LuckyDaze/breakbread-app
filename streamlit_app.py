@@ -77,9 +77,16 @@ else:
 logo_path = "assets/BB_logo.png"
 def display_logo(width=None, use_container_width=False):
     if os.path.exists(logo_path):
-        st.image(logo_path, width=width, use_container_width=use_container_width)
+        st.image(
+            logo_path, 
+            width=width, 
+            use_container_width=use_container_width
+        )
     else:
-        st.markdown("<h1 style='text-align: center; color: #FE8B00; font-size: 3.5rem; font-weight: 700;'>Break Bread</h1>", unsafe_allow_html=True)
+        st.markdown(
+            "<h1 style='text-align: center; color: #FE8B00; font-size: 3.5rem; font-weight: 700;'>Break Bread</h1>", 
+            unsafe_allow_html=True
+        )
 
 # ----------------------------
 # Utility Functions
@@ -157,38 +164,3 @@ def fake_login(username=None, password=None):
     elif user:
         return {"status": "ERROR", "message": "Invalid password"}
     else:
-        return {"status": "ERROR", "message": "User not found"}
-
-def logout():
-    st.session_state.auth_user = None
-    st.rerun()
-
-def send_money(sender_id, recipient_identifier, amount, note=""):
-    recipient = find_user(recipient_identifier)
-    if not recipient:
-        return False, "Recipient not found"
-    
-    sender = get_user(sender_id)
-    if not sender:
-        return False, "Sender not found"
-    
-    if sender["balance"] < amount:
-        return False, "Insufficient funds"
-    
-    sender["balance"] -= amount
-    recipient["balance"] += amount
-    
-    transaction = {
-        "transaction_id": uid(),
-        "sender_id": sender_id,
-        "recipient_id": recipient["user_id"],
-        "amount": amount,
-        "fee": 0.0,
-        "note": note,
-        "status": "completed",
-        "ts": datetime.now()
-    }
-    st.session_state.transactions.append(transaction)
-    return True, "Payment sent successfully"
-
-def request_money(requestor_id, recipient_identifier, amount, note
