@@ -1,0 +1,24 @@
+Gap Fix
+
+JWT stored in session storage (browser) Use HttpOnly cookies via backend; Streamlit can't set them easily – instead, ensure short expiration and refresh tokens.
+
+No HTTPS in development Always use HTTPS in production (Streamlit Cloud provides it).
+
+Plaid public token exposed Exchange on backend only; never log.
+
+SQL injection Use parameterised queries (already done).
+
+Missing rate limiting Add slowapi or similar to FastAPI endpoints.
+
+No encryption of access tokens at rest Encrypt plaid_access_token using Fernet (key in env).
+
+No CORS restrictions In production, set allow_origins=["https://your-app.streamlit.app"].
+
+Missing input validation Validate email format, password strength, amount limits.
+
+No logout (JWT invalidation) Implement token blacklist using Redis or short expiry + refresh tokens.
+
+
+
+Add these immediately before production.
+
