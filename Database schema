@@ -86,6 +86,13 @@ last_updated TIMESTAMPTZ DEFAULT NOW()
 
 );
 
+-- ADD THIS to users table
+ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
+ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN DEFAULT FALSE;
+
+-- ADD THIS to plaid_items
+ALTER TABLE plaid_items ADD COLUMN status TEXT DEFAULT 'active'; -- 'active', 'error', 'relink_required'
+
 ```
 
 
