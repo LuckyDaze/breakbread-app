@@ -42,7 +42,7 @@ def display_logo(width=None, use_container_width=False):
     if os.path.exists(logo_path):
         st.image(logo_path, width=width, use_container_width=use_container_width)
     else:
-        st.markdown("<h1 style='text-align: center; color: #FE8B00; font-size: 3.5rem; font-weight: 700;'>Break Bread</h1>", unsafe_allow_html=True)
+        st.markdown("assets/BB_logo.png", unsafe_allow_html=True)
 
 
 # ----------------------------
