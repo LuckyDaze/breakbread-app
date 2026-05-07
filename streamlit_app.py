@@ -802,11 +802,13 @@ def show_universal_research():
 def show_login():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        # assets/BB_logo.png
-        display_logo(use_container_width=True)
-      
+        # ---> THIS REPLACES THE CIRCLED AREA <---
+        st.image("assets/BB_logo.png", use_container_width=True) 
+        
+        # ---> THIS KEEPS "Build Wealth Together" <---
+        st.markdown("<h3 style='text-align: center; color: #FFFFFF; margin-bottom: 3rem;'>Build Wealth Together</h3>", unsafe_allow_html=True)
     
-    st.header("assets/BB_logo.png")
+    st.header("Welcome to Break Bread")
 
     tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
 
