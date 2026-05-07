@@ -14,7 +14,7 @@ from fastapi import FastAPI, HTTPException, Depends, status
 
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field, validator
 
 from plaid.api import plaid_api
 
@@ -125,39 +125,20 @@ return user_id
 # ---- Pydantic models ----
 
 class UserCreate(BaseModel):
-
-app_id: str
-
-email: str
-
-password: str
-
-full_name: str = None
-
-
+    app_id: str = Field(..., min_length=3, max_length=20)
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+    full_name: str = None  # Added this back so your frontend registration still works!
+    
+    @validator('password')
+    def password_complexity(cls, v):
+        if not any(char.isdigit() for char in v):
+            raise ValueError('Password must contain at least one digit')
+        return v
 
 class UserLogin(BaseModel):
-
-username: str
-
-password: str
-
-
-
-class LinkTokenRequest(BaseModel):
-
-user_id: str # will come from JWT normally
-
-
-
-class PublicTokenExchange(BaseModel):
-
-public_token: str
-
-user_id: str
-
-
-
+    username: str
+    password: str
 # ---- API endpoints ----
 
 app = FastAPI()
