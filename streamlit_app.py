@@ -19,9 +19,10 @@ st.set_page_config(
 )
 
 # ----------------------------
-# THE FINTECH BRANDING FIX
+# THE FINTECH BRANDING FIX & CSS
 # ----------------------------
-hide_st_style = """
+# Hardcoding the core CSS so the app never breaks, even if the external file is missing.
+core_css = """
 <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
@@ -32,12 +33,27 @@ hide_st_style = """
         padding-bottom: 0rem;
     }
     
+    /* Make active tab orange */
     .stTabs [data-baseweb="tab-highlight"] {
         background-color: #FE8B00 !important;
     }
+
+    /* Force Primary Buttons to be Break Bread Orange with Black Text */
+    .stButton button[kind="primary"] {
+        background-color: #FE8B00 !important;
+        color: #000000 !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-weight: 700 !important;
+    }
+    
+    .stButton button[kind="primary"]:hover {
+        background-color: #FF9A2D !important;
+        color: #000000 !important;
+    }
 </style>
 """
-st.markdown(hide_st_style, unsafe_allow_html=True)
+st.markdown(core_css, unsafe_allow_html=True)
 
 # Override the browser tab title
 components.html(
@@ -417,7 +433,7 @@ def show_treasury_bonds():
         - No fees
         - Min investment: $100
         """)
-        if st.button("🪙 Visit TreasuryDirect", use_container_width=True): 
+        if st.button("🪙 Visit TreasuryDirect", use_container_width=True, type="primary"): 
             st.markdown("[Open TreasuryDirect](https://www.treasurydirect.gov/)")
 
     st.markdown("---")
@@ -457,7 +473,7 @@ def show_precious_metals():
         **APMEX** - Largest online precious metals dealer
         - Secure storage
         """)
-        if st.button("🪙 Visit APMEX", use_container_width=True): 
+        if st.button("🪙 Visit APMEX", use_container_width=True, type="primary"): 
             st.markdown("[Open APMEX](https://www.apmex.com/)")
 
     st.markdown("---")
@@ -490,7 +506,7 @@ def show_startup_investing():
     with col2:
         platforms = [("Wefunder", "https://wefunder.com/"), ("StartEngine", "https://startengine.com/")]
         for name, url in platforms:
-            if st.button(f"Visit {name}", key=f"btn_{name}", use_container_width=True): 
+            if st.button(f"Visit {name}", key=f"btn_{name}", use_container_width=True, type="primary"): 
                 st.markdown(f"[Open {name}]({url})")
 
     st.markdown("---")
@@ -524,7 +540,7 @@ def show_business_marketplace():
         st.info("""
         **BizBuySell** - 45,000+ businesses
         """)
-        if st.button("🏢 Browse Businesses", use_container_width=True): 
+        if st.button("🏢 Browse Businesses", use_container_width=True, type="primary"): 
             st.markdown("[Open BizBuySell](https://www.bizbuysell.com/)")
 
     st.markdown("---")
@@ -558,7 +574,7 @@ def show_royalty_investing():
         st.info("""
         **Royalty Exchange** - Vetted offerings
         """)
-        if st.button("🎵 Browse Royalties", use_container_width=True): 
+        if st.button("🎵 Browse Royalties", use_container_width=True, type="primary"): 
             st.markdown("[Open Royalty Exchange](https://www.royaltyexchange.com/)")
 
     st.markdown("---")
@@ -592,7 +608,7 @@ def show_municipal_bonds():
         st.info("""
         **MunicipalBonds.com** - Real-time pricing
         """)
-        if st.button("🏛️ Browse Muni Bonds", use_container_width=True): 
+        if st.button("🏛️ Browse Muni Bonds", use_container_width=True, type="primary"): 
             st.markdown("[Open MunicipalBonds](https://www.municipalbonds.com/)")
 
     st.markdown("---")
@@ -742,11 +758,11 @@ def show_dashboard(user):
     st.subheader("Quick Actions")
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        if st.button("💸 Send Money", use_container_width=True):
+        if st.button("💸 Send Money", use_container_width=True, type="primary"):
             st.session_state.app_nav_radio = "Banking"
             st.rerun()
     with c2:
-        if st.button("📈 Invest", use_container_width=True):
+        if st.button("📈 Invest", use_container_width=True, type="primary"):
             st.session_state.app_nav_radio = "Markets"
             st.rerun()
     with c3:
@@ -755,7 +771,7 @@ def show_dashboard(user):
             if success: toast_success("💰 $2,000 added!")
             st.rerun()
     with c4:
-        if st.button("⚙️ Settings", use_container_width=True):
+        if st.button("⚙️ Settings", use_container_width=True, type="primary"):
             st.session_state.app_nav_radio = "Settings"
             st.rerun()
 
@@ -778,7 +794,7 @@ def show_banking(user):
     with col1: st.header("💸 Banking")
     with col2:
         st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-        if st.button("⬅️ Home", key="home_btn_banking", use_container_width=True):
+        if st.button("⬅️ Home", key="home_btn_banking", use_container_width=True, type="primary"):
             st.session_state.app_nav_radio = "Dashboard"
             st.rerun()
     
@@ -810,7 +826,7 @@ def show_banking(user):
         with c2:
             st.subheader("Quick Send")
             for demo_user in [u for u in st.session_state.users.values() if u["user_id"] != user["user_id"]][:2]:
-                if st.button(f"Send $10 to {demo_user['app_id']}", key=f"quick_{demo_user['user_id']}"):
+                if st.button(f"Send $10 to {demo_user['app_id']}", key=f"quick_{demo_user['user_id']}", type="primary"):
                     if send_money(user["user_id"], demo_user["app_id"], 10.0)[0]: st.rerun()
     
     with tab2:
@@ -829,7 +845,7 @@ def show_markets(user):
     with col1: st.header("📈 Multi-Asset Markets")
     with col2:
         st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-        if st.button("⬅️ Home", key="home_btn_markets", use_container_width=True):
+        if st.button("⬅️ Home", key="home_btn_markets", use_container_width=True, type="primary"):
             st.session_state.app_nav_radio = "Dashboard"
             st.rerun()
     
@@ -857,13 +873,13 @@ def show_settings(user):
     with col1: st.header("⚙️ Settings")
     with col2:
         st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-        if st.button("⬅️ Home", key="home_btn_settings", use_container_width=True):
+        if st.button("⬅️ Home", key="home_btn_settings", use_container_width=True, type="primary"):
             st.session_state.app_nav_radio = "Dashboard"
             st.rerun()
     
     st.write(f"**Username:** {user['app_id']}\n**Email:** {user['email']}")
     dark_mode = st.toggle("Dark Mode", value=True)
-    if st.button("Save Preferences"): st.success("Saved!")
+    if st.button("Save Preferences", type="primary"): st.success("Saved!")
     st.divider()
     if st.button("Logout", type="secondary"): logout()
 
