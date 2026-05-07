@@ -806,7 +806,7 @@ def show_login():
         display_logo(use_container_width=True)
       
     
-    st.header("Build Wealth Together")
+    st.header("assets/BB_logo.png")
 
     tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
 
