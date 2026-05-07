@@ -13,7 +13,7 @@ import requests
 # ----------------------------
 st.set_page_config(
     page_title="Break Bread",
-    page_icon="assets/BB_logo.png",
+    page_icon="assets/Break Bread - Bread Only.png",
     layout="wide",
     initial_sidebar_state="expanded",
 )
