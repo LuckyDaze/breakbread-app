@@ -21,7 +21,6 @@ st.set_page_config(
 # ----------------------------
 # THE FINTECH BRANDING FIX & CSS
 # ----------------------------
-# Hardcoding the core CSS so the app never breaks, even if the external file is missing.
 core_css = """
 <style>
     #MainMenu {visibility: hidden;}
@@ -93,11 +92,7 @@ else:
 logo_path = "assets/BB_logo.png"
 def display_logo(width=None, use_container_width=False):
     if os.path.exists(logo_path):
-        st.image(
-            logo_path, 
-            width=width, 
-            use_container_width=use_container_width
-        )
+        st.image(logo_path, width=width, use_container_width=use_container_width)
     else:
         st.markdown(
             "<h1 style='text-align: center; color: #FE8B00; font-size: 3.5rem; font-weight: 700;'>Break Bread</h1>", 
@@ -376,22 +371,14 @@ def show_bonds_treasuries():
     treasury_data = get_treasury_yields()
     col1, col2 = st.columns([2, 1])
     with col1:
-        st.markdown("""
-        ### Fixed Income Overview
-        Government bonds provide stable income.
-        """)
+        st.markdown("### Fixed Income Overview\nGovernment bonds provide stable income.")
         if treasury_data:
             t1, t2, t3 = st.columns(3)
             with t1: st.metric("1-Month", f"{treasury_data['1_month']:.2f}%")
             with t2: st.metric("2-Year", f"{treasury_data['2_year']:.2f}%")
             with t3: st.metric("10-Year", f"{treasury_data['10_year']:.2f}%")
     with col2:
-        st.markdown("""
-        ### Quick Access
-        - **Treasury Bonds**
-        - **Municipal Bonds**
-        - **Corporate Bonds**
-        """)
+        st.markdown("### Quick Access\n- **Treasury Bonds**\n- **Municipal Bonds**\n- **Corporate Bonds**")
 
     st.markdown("---")
     b_col, r_col = st.columns(2)
@@ -416,10 +403,7 @@ def show_treasury_bonds():
     st.subheader("🇺🇸 U.S. Treasury Bonds")
     col1, col2 = st.columns([2, 1])
     with col1:
-        st.markdown("""
-        ### About Treasury Bonds
-        Considered among the safest investments in the world.
-        """)
+        st.markdown("### About Treasury Bonds\nConsidered among the safest investments in the world.")
         treasury_data = get_treasury_yields()
         if treasury_data:
             t1, t2, t3 = st.columns(3)
@@ -427,12 +411,7 @@ def show_treasury_bonds():
             with t2: st.metric("2-Year Note", f"{treasury_data.get('2_year', 4.89):.2f}%")
             with t3: st.metric("10-Year Bond", f"{treasury_data.get('10_year', 4.45):.2f}%")
     with col2:
-        st.info("""
-        **TreasuryDirect.gov**
-        - Direct purchase
-        - No fees
-        - Min investment: $100
-        """)
+        st.info("**TreasuryDirect.gov**\n- Direct purchase\n- No fees\n- Min investment: $100")
         if st.button("🪙 Visit TreasuryDirect", use_container_width=True, type="primary"): 
             st.markdown("[Open TreasuryDirect](https://www.treasurydirect.gov/)")
 
@@ -460,19 +439,13 @@ def show_precious_metals():
     metals = get_metals_prices()
     col1, col2 = st.columns([2, 1])
     with col1:
-        st.markdown("""
-        ### Spot Prices
-        Precious metals act as a hedge against fiat currency devaluation.
-        """)
+        st.markdown("### Spot Prices\nPrecious metals act as a hedge against fiat currency devaluation.")
         m1, m2, m3 = st.columns(3)
         with m1: st.metric("Gold", f"${metals['gold']:,.2f}/oz")
         with m2: st.metric("Silver", f"${metals['silver']:,.2f}/oz")
         with m3: st.metric("Platinum", f"${metals['platinum']:,.2f}/oz")
     with col2:
-        st.info("""
-        **APMEX** - Largest online precious metals dealer
-        - Secure storage
-        """)
+        st.info("**APMEX** - Largest online precious metals dealer\n- Secure storage")
         if st.button("🪙 Visit APMEX", use_container_width=True, type="primary"): 
             st.markdown("[Open APMEX](https://www.apmex.com/)")
 
@@ -499,10 +472,7 @@ def show_startup_investing():
     st.subheader("🚀 Startup & Equity Crowdfunding")
     col1, col2 = st.columns([2, 1])
     with col1:
-        st.markdown("""
-        ### Invest in Innovation
-        Buy pre-IPO shares in startups via SEC-regulated portals.
-        """)
+        st.markdown("### Invest in Innovation\nBuy pre-IPO shares in startups via SEC-regulated portals.")
     with col2:
         platforms = [("Wefunder", "https://wefunder.com/"), ("StartEngine", "https://startengine.com/")]
         for name, url in platforms:
@@ -532,14 +502,9 @@ def show_business_marketplace():
     st.subheader("🏢 Business Acquisition Marketplace")
     col1, col2 = st.columns([2, 1])
     with col1:
-        st.markdown("""
-        ### Buy an Established Business
-        Skip the startup phase and acquire proven cash flow.
-        """)
+        st.markdown("### Buy an Established Business\nSkip the startup phase and acquire proven cash flow.")
     with col2:
-        st.info("""
-        **BizBuySell** - 45,000+ businesses
-        """)
+        st.info("**BizBuySell** - 45,000+ businesses")
         if st.button("🏢 Browse Businesses", use_container_width=True, type="primary"): 
             st.markdown("[Open BizBuySell](https://www.bizbuysell.com/)")
 
@@ -566,14 +531,9 @@ def show_royalty_investing():
     st.subheader("🎵 Royalty & Intellectual Property Investing")
     col1, col2 = st.columns([2, 1])
     with col1:
-        st.markdown("""
-        ### Invest in Royalties
-        Earn passive income from music, patents, and film rights.
-        """)
+        st.markdown("### Invest in Royalties\nEarn passive income from music, patents, and film rights.")
     with col2:
-        st.info("""
-        **Royalty Exchange** - Vetted offerings
-        """)
+        st.info("**Royalty Exchange** - Vetted offerings")
         if st.button("🎵 Browse Royalties", use_container_width=True, type="primary"): 
             st.markdown("[Open Royalty Exchange](https://www.royaltyexchange.com/)")
 
@@ -600,14 +560,9 @@ def show_municipal_bonds():
     st.subheader("🏛️ Municipal Bonds")
     col1, col2 = st.columns([2, 1])
     with col1:
-        st.markdown("""
-        ### Invest in Local Communities
-        Debt issued by state/local governments for public projects.
-        """)
+        st.markdown("### Invest in Local Communities\nDebt issued by state/local governments for public projects.")
     with col2:
-        st.info("""
-        **MunicipalBonds.com** - Real-time pricing
-        """)
+        st.info("**MunicipalBonds.com** - Real-time pricing")
         if st.button("🏛️ Browse Muni Bonds", use_container_width=True, type="primary"): 
             st.markdown("[Open MunicipalBonds](https://www.municipalbonds.com/)")
 
@@ -776,122 +731,4 @@ def show_dashboard(user):
             st.rerun()
 
     st.subheader("Featured Investment Vehicles")
-    i1, i2, i3 = st.columns(3)
-    features = [
-        ("🏢 Business Marketplace", "Buy established businesses"),
-        ("🏛️ Municipal Bonds", "Tax-free local investments"),
-        ("🎵 Royalty Investing", "Earn from music & patents")
-    ]
-    for col, (title, desc) in zip([i1, i2, i3], features):
-        with col:
-            st.markdown(
-                f"<div style='background-color: #1A1A1A; padding: 1.5rem; border-radius: 12px; border: 1px solid #333;'><h4 style='color: #FE8B00;'>{title}</h4><p style='color: #888;'>{desc}</p></div>", 
-                unsafe_allow_html=True
-            )
-
-def show_banking(user):
-    col1, col2 = st.columns([5, 1])
-    with col1: st.header("💸 Banking")
-    with col2:
-        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-        if st.button("⬅️ Home", key="home_btn_banking", use_container_width=True, type="primary"):
-            st.session_state.app_nav_radio = "Dashboard"
-            st.rerun()
-    
-    st.markdown(f"""
-    <div style='background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 100%); padding: 2rem; border-radius: 20px; margin-bottom: 2rem; border: 1px solid #333;'>
-        <h3 style='color: #FFFFFF; margin: 0 0 0.5rem 0;'>Available Balance</h3>
-        <h1 style='color: #FE8B00; margin: 0; font-size: 2.8rem;'>{format_money(user["balance"])}</h1>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    if st.button("**+ Add Cash**", use_container_width=True, type="primary"):
-        success = simulate_paycheck(user["user_id"])
-        if success: toast_success("💰 $2,000 added!")
-        st.rerun()
-
-    tab1, tab2 = st.tabs(["💸 Send Money", "📊 Transaction History"])
-    with tab1:
-        c1, c2 = st.columns(2)
-        with c1:
-            st.subheader("Send Payment")
-            recipient = st.text_input("Recipient", key="send_rec")
-            amount = st.number_input("Amount", min_value=0.01, value=10.0, key="send_amt")
-            if st.button("Send", type="primary"):
-                ok, msg = send_money(user["user_id"], recipient, amount)
-                if ok: 
-                    toast_success(msg); st.rerun()
-                else: 
-                    st.error(msg)
-        with c2:
-            st.subheader("Quick Send")
-            for demo_user in [u for u in st.session_state.users.values() if u["user_id"] != user["user_id"]][:2]:
-                if st.button(f"Send $10 to {demo_user['app_id']}", key=f"quick_{demo_user['user_id']}", type="primary"):
-                    if send_money(user["user_id"], demo_user["app_id"], 10.0)[0]: st.rerun()
-    
-    with tab2:
-        txs = [t for t in st.session_state.transactions if user["user_id"] in [t["sender_id"], t["recipient_id"]]]
-        if txs:
-            data = []
-            for tx in txs:
-                ttype = "Sent" if tx["sender_id"] == user["user_id"] else "Received"
-                data.append({"Date": tx["ts"].strftime("%Y-%m-%d"), "Type": ttype, "Amount": format_money(tx['amount'])})
-            st.dataframe(pd.DataFrame(data), use_container_width=True)
-        else:
-            st.info("No transactions yet.")
-
-def show_markets(user):
-    col1, col2 = st.columns([5, 1])
-    with col1: st.header("📈 Multi-Asset Markets")
-    with col2:
-        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-        if st.button("⬅️ Home", key="home_btn_markets", use_container_width=True, type="primary"):
-            st.session_state.app_nav_radio = "Dashboard"
-            st.rerun()
-    
-    asset_tabs = st.tabs([
-        "Stocks & ETFs", "Crypto", "Bonds & Treasuries", "Treasury Bonds", 
-        "Precious Metals", "Startup Investing", "Business Marketplace", 
-        "Royalty Investing", "Municipal Bonds"
-    ])
-    
-    with asset_tabs[0]: show_stocks_etfs()
-    with asset_tabs[1]: show_crypto_assets()
-    with asset_tabs[2]: show_bonds_treasuries()
-    with asset_tabs[3]: show_treasury_bonds()
-    with asset_tabs[4]: show_precious_metals()
-    with asset_tabs[5]: show_startup_investing()
-    with asset_tabs[6]: show_business_marketplace()
-    with asset_tabs[7]: show_royalty_investing()
-    with asset_tabs[8]: show_municipal_bonds()
-    
-    st.markdown("---")
-    show_universal_research()
-
-def show_settings(user):
-    col1, col2 = st.columns([5, 1])
-    with col1: st.header("⚙️ Settings")
-    with col2:
-        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-        if st.button("⬅️ Home", key="home_btn_settings", use_container_width=True, type="primary"):
-            st.session_state.app_nav_radio = "Dashboard"
-            st.rerun()
-    
-    st.write(f"**Username:** {user['app_id']}\n**Email:** {user['email']}")
-    dark_mode = st.toggle("Dark Mode", value=True)
-    if st.button("Save Preferences", type="primary"): st.success("Saved!")
-    st.divider()
-    if st.button("Logout", type="secondary"): logout()
-
-# ----------------------------
-# Main App
-# ----------------------------
-def main():
-    ensure_demo_users()
-    if not st.session_state.get("auth_user"):
-        show_login()
-        return
-    show_main_app()
-
-if __name__ == "__main__":
-    main()
+    i1, i2, i3 = st.columns(3
