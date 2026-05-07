@@ -1,16 +1,21 @@
-streamlit>=1.31.0
+# --- Frontend & Data Visualization ---
+streamlit>=1.35.0
 pandas>=2.2.2
 numpy>=1.26.0
+plotly>=5.24.0
 yfinance>=0.2.40
-plotly>=5.18.0
-requests>=2.31.0
 python-dateutil>=2.8.2
 pytz>=2024.1
-yfinance>=0.2.18
-requests>=2.31.0
-pandas>=2.0.0
-plotly>=5.14.0
-yfinance>=0.2.18
-requests>=2.31.0
-pandas>=2.0.0
-plotly>=5.14.0
+requests>=2.32.0
+
+# --- Backend API & Security ---
+fastapi>=0.115.0
+uvicorn>=0.30.0
+python-multipart>=0.0.9
+bcrypt>=4.1.0
+pyjwt>=2.8.0
+python-dotenv>=1.0.0
+
+# --- Database & External APIs ---
+psycopg2-binary>=2.9.9
+plaid-python>=15.0.0
