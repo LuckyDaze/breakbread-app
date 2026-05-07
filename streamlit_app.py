@@ -8,9 +8,8 @@ import plotly.graph_objects as go
 import yfinance as yf
 import requests
 
-# Apply Break Bread Orange Theme CSS
 # ----------------------------
-# Page configuration
+# Page configuration (MUST BE FIRST)
 # ----------------------------
 st.set_page_config(
     page_title="Break Bread",
@@ -19,19 +18,32 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Load external CSS
-with open("assets/custom_styles.css") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+# ----------------------------
+# Safe Asset Loaders
+# ----------------------------
+# 1. Safely load external CSS
+css_path = "assets/custom_styles.css"
+if os.path.exists(css_path):
+    with open(css_path) as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+else:
+    # Basic fallback theme so the app doesn't look completely broken if the file is missing
+    st.markdown("""
+    <style>
+        .stApp { background-color: #000000; color: #FFFFFF; }
+        h1, h2, h3 { color: #FE8B00 !important; }
+    </style>
+    """, unsafe_allow_html=True)
+    st.warning("⚠️ custom_styles.css not found. Make sure the 'assets' folder is pushed to GitHub!")
 
-# ----------------------------
-# Page configuration
-# ----------------------------
-st.set_page_config(
-    page_title="Break Bread",
-    page_icon="🍞",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+# 2. Safely load the Logo
+logo_path = "assets/break_bread_logo.png"
+def display_logo(width=None, use_container_width=False):
+    if os.path.exists(logo_path):
+        st.image(logo_path, width=width, use_container_width=use_container_width)
+    else:
+        st.markdown("<h1 style='text-align: center; color: #FE8B00; font-size: 3.5rem; font-weight: 700;'>Break Bread</h1>", unsafe_allow_html=True)
+
 
 # ----------------------------
 # Utility Functions
@@ -750,7 +762,8 @@ def show_universal_research():
 def show_login():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("<h1 style='text-align: center; color: #FE8B00; font-size: 3.5rem; font-weight: 700;'>Break Bread</h1>", unsafe_allow_html=True)
+        # Implementing the safe logo loader here!
+        display_logo(use_container_width=True)
         st.markdown("<h3 style='text-align: center; color: #FFFFFF; margin-bottom: 3rem;'>Build Wealth Together</h3>", unsafe_allow_html=True)
     
     st.header("Welcome to Break Bread")
@@ -787,6 +800,9 @@ def show_main_app():
         return
     
     with st.sidebar:
+        # Implementing the safe logo loader in the sidebar!
+        display_logo(width=150)
+        
         # User profile section
         st.markdown(f"""
         <div style='
