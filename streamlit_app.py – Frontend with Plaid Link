@@ -1,0 +1,309 @@
+```python
+
+import streamlit as st
+
+import requests
+
+import pandas as pd
+
+import plotly.graph_objects as go
+
+import yfinance as yf
+
+from datetime import datetime
+
+import json
+
+
+
+# ---- Configuration ----
+
+API_URL = "http://localhost:8000" # Change to your deployed backend URL
+
+
+
+# ---- Session state initialisation ----
+
+if "token" not in st.session_state:
+
+st.session_state.token = None
+
+if "user_id" not in st.session_state:
+
+st.session_state.user_id = None
+
+if "link_token" not in st.session_state:
+
+st.session_state.link_token = None
+
+
+
+# ---- Helper functions ----
+
+def api_request(endpoint, method="GET", data=None, need_auth=True):
+
+headers = {}
+
+if need_auth and st.session_state.token:
+
+headers["Authorization"] = f"Bearer {st.session_state.token}"
+
+if method == "GET":
+
+resp = requests.get(f"{API_URL}{endpoint}", headers=headers)
+
+else:
+
+resp = requests.post(f"{API_URL}{endpoint}", json=data, headers=headers)
+
+if resp.status_code == 401:
+
+st.session_state.token = None
+
+st.session_state.user_id = None
+
+st.error("Session expired. Please log in again.")
+
+st.rerun()
+
+return resp.json() if resp.status_code == 200 else None
+
+
+
+def login(username, password):
+
+resp = api_request("/login", method="POST", data={"username": username, "password": password}, need_auth=False)
+
+if resp and "access_token" in resp:
+
+st.session_state.token = resp["access_token"]
+
+# decode JWT to get user_id (or store from response)
+
+# For simplicity, we'll call /me endpoint (we can add one)
+
+me = api_request("/me", need_auth=True) # we'll add a /me endpoint later
+
+if me:
+
+st.session_state.user_id = me["user_id"]
+
+return True
+
+return False
+
+
+
+def register(app_id, email, password, full_name):
+
+resp = api_request("/register", method="POST", data={
+
+"app_id": app_id, "email": email, "password": password, "full_name": full_name
+
+}, need_auth=False)
+
+if resp and "access_token" in resp:
+
+st.session_state.token = resp["access_token"]
+
+return True
+
+return False
+
+
+
+def create_link_token():
+
+resp = api_request("/create_link_token", method="POST", need_auth=True)
+
+if resp and "link_token" in resp:
+
+st.session_state.link_token = resp["link_token"]
+
+return True
+
+return False
+
+
+
+# ---- Plaid Link component (requires custom component or iframe) ----
+
+# We'll use the Plaid Link WebView via st.components.v1.iframe
+
+# But better: use streamlit-plaid-link community component. For simplicity,
+
+# we'll show instructions and a button that calls the backend.
+
+# In a real implementation, you'd use `streamlit_plaid_link` or similar.
+
+
+
+def show_plaid_link():
+
+st.subheader("🔐 Connect Your Bank Account")
+
+if st.button("🔄 Create Link Token"):
+
+if create_link_token():
+
+st.info("Link token created. Use the following link to connect:")
+
+st.code(f"https://cdn.plaid.com/link/v2/stable/link.html?token={st.session_state.link_token}")
+
+st.markdown("""
+
+**For production**, you would embed the Plaid Link WebView directly.
+
+We'll simulate by providing the link. After connecting, you'll get a public_token.
+
+""")
+
+public_token = st.text_input("Paste the public_token here after connecting:")
+
+if st.button("Exchange Token"):
+
+resp = api_request("/exchange_public_token", method="POST", data={
+
+"public_token": public_token,
+
+"user_id": st.session_state.user_id
+
+}, need_auth=True)
+
+if resp and resp.get("status") == "success":
+
+st.success("Bank account linked successfully!")
+
+else:
+
+st.error("Failed to link account.")
+
+
+
+# ---- Existing UI (Break Bread theme) ----
+
+# ... (keep your CSS and layout functions, but replace backend calls)
+
+
+
+def show_login():
+
+# ... similar to before but call API
+
+st.title("Break Bread")
+
+tab1, tab2 = st.tabs(["Login", "Sign Up"])
+
+with tab1:
+
+username = st.text_input("Username or Email")
+
+password = st.text_input("Password", type="password")
+
+if st.button("Login"):
+
+if login(username, password):
+
+st.success("Logged in!")
+
+st.rerun()
+
+else:
+
+st.error("Invalid credentials")
+
+with tab2:
+
+new_username = st.text_input("Choose username")
+
+email = st.text_input("Email")
+
+fullname = st.text_input("Full name")
+
+new_pass = st.text_input("Password", type="password")
+
+if st.button("Register"):
+
+if register(new_username, email, new_pass, fullname):
+
+st.success("Registered! You are now logged in.")
+
+st.rerun()
+
+else:
+
+st.error("Registration failed")
+
+
+
+def show_main_app():
+
+# Sidebar with user info
+
+user = api_request("/me") # We need to add /me endpoint in backend
+
+if not user:
+
+st.error("Could not fetch user data")
+
+return
+
+# ... rest of your sidebar (same as before, but use user data from API)
+
+# For brevity, we'll keep the existing show_main_app but replace user dict
+
+# ... (I'll keep your original show_main_app with minor modifications)
+
+
+
+# We need to add a /me endpoint in backend.py:
+
+"""
+
+@app.get("/me")
+
+def get_me(current_user: str = Depends(get_current_user)):
+
+conn = get_db_connection()
+
+cur = conn.cursor()
+
+cur.execute("SELECT user_id, app_id, email, full_name, balance FROM users WHERE user_id = %s", (current_user,))
+
+user = cur.fetchone()
+
+cur.close()
+
+conn.close()
+
+return user
+
+"""
+
+
+
+# Finally, run the Streamlit app
+
+def main():
+
+if not st.session_state.token:
+
+show_login()
+
+else:
+
+show_main_app()
+
+show_plaid_link() # optional, can place inside Banking tab
+
+
+
+if __name__ == "__main__":
+
+main()
+
+```
+
+
+
+---
