@@ -12,7 +12,7 @@ import requests
 # Page configuration (MUST BE FIRST)
 # ----------------------------
 st.set_page_config(
-    page_title="Break Bread",
+    page_title="assets/BB_logo.png",
     page_icon="🍞",
     layout="wide",
     initial_sidebar_state="expanded",
