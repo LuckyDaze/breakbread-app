@@ -1,0 +1,93 @@
+```sql
+
+CREATE TABLE IF NOT EXISTS users (
+
+user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+app_id TEXT UNIQUE NOT NULL,
+
+email TEXT UNIQUE NOT NULL,
+
+password_hash TEXT NOT NULL,
+
+full_name TEXT,
+
+balance DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+
+created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+last_login TIMESTAMPTZ
+
+);
+
+
+
+CREATE TABLE IF NOT EXISTS transactions (
+
+transaction_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+sender_id UUID NOT NULL REFERENCES users(user_id),
+
+recipient_id UUID NOT NULL REFERENCES users(user_id),
+
+amount DECIMAL(12,2) NOT NULL,
+
+fee DECIMAL(12,2) DEFAULT 0.00,
+
+note TEXT,
+
+status TEXT DEFAULT 'completed',
+
+ts TIMESTAMPTZ NOT NULL DEFAULT NOW()
+
+);
+
+
+
+-- New tables for Plaid integration
+
+CREATE TABLE IF NOT EXISTS plaid_items (
+
+item_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+user_id UUID NOT NULL REFERENCES users(user_id),
+
+plaid_access_token TEXT NOT NULL,
+
+plaid_item_id TEXT NOT NULL,
+
+institution_name TEXT,
+
+created_at TIMESTAMPTZ DEFAULT NOW()
+
+);
+
+
+
+CREATE TABLE IF NOT EXISTS plaid_accounts (
+
+account_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+item_id UUID NOT NULL REFERENCES plaid_items(item_id),
+
+plaid_account_id TEXT NOT NULL,
+
+name TEXT,
+
+mask TEXT,
+
+type TEXT,
+
+subtype TEXT,
+
+balance_current DECIMAL(12,2) DEFAULT 0.00,
+
+last_updated TIMESTAMPTZ DEFAULT NOW()
+
+);
+
+```
+
+
+
+---
