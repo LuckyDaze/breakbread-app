@@ -23,6 +23,7 @@ st.set_page_config(
 # THE FINTECH BRANDING FIX
 # ----------------------------
 # 1. Hide the Streamlit Menu, Header, and Footer via CSS
+# AND override the active Tab Highlight color to Break Bread Orange
 hide_st_style = """
 <style>
     #MainMenu {visibility: hidden;}
@@ -33,6 +34,11 @@ hide_st_style = """
     .block-container {
         padding-top: 2rem;
         padding-bottom: 0rem;
+    }
+    
+    /* Change the active tab sliding highlight bar to Orange */
+    .stTabs [data-baseweb="tab-highlight"] {
+        background-color: #FE8B00 !important;
     }
 </style>
 """
@@ -1107,7 +1113,16 @@ def show_banking(user):
             st.info("No transactions yet. Send or request money to get started!")
 
 def show_markets(user):
-    st.header("📈 Multi-Asset Markets")
+    # Added a 2-column layout to place a Home/Back button cleanly next to the title
+    col1, col2 = st.columns([5, 1])
+    with col1:
+        st.header("📈 Multi-Asset Markets")
+    with col2:
+        # Pushes the button down slightly to align horizontally with the header text
+        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+        if st.button("⬅️ Home", use_container_width=True):
+            st.session_state.app_nav_radio = "Dashboard"
+            st.rerun()
     
     # Expanded investment categories
     asset_tabs = st.tabs([
