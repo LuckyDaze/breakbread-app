@@ -804,9 +804,9 @@ def show_login():
     with col2:
         # Implementing the safe logo loader here!
         display_logo(use_container_width=True)
-        st.markdown("<h3 style='text-align: center; color: #FFFFFF; margin-bottom: 3rem;'>Build Wealth Together</h3>", unsafe_allow_html=True)
+      
     
-    st.header("Welcome to Break Bread")
+    st.header("Build Wealth Together")
 
     tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
 
