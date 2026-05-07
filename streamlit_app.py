@@ -802,7 +802,7 @@ def show_universal_research():
 def show_login():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        # Implementing the safe logo loader here!
+        # assets/BB_logo.png
         display_logo(use_container_width=True)
       
     
