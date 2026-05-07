@@ -4,6 +4,7 @@ import random
 from datetime import datetime, timedelta
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 import plotly.graph_objects as go
 import yfinance as yf
 import requests
@@ -16,6 +17,45 @@ st.set_page_config(
     page_icon="assets/Break Bread - Bread Only.png",
     layout="wide",
     initial_sidebar_state="expanded",
+)
+
+# ----------------------------
+# THE FINTECH BRANDING FIX
+# ----------------------------
+# 1. Hide the Streamlit Menu, Header, and Footer via CSS
+hide_st_style = """
+<style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* Remove the extra top white-space padding so the app sits flush */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 0rem;
+    }
+</style>
+"""
+st.markdown(hide_st_style, unsafe_allow_html=True)
+
+# 2. Hack the Browser Tab to permanently remove " · Streamlit" via JS
+components.html(
+    """
+    <script>
+        const observer = new MutationObserver(function(mutations) {
+            if (window.parent.document.title !== "Break Bread") {
+                window.parent.document.title = "Break Bread";
+            }
+        });
+        const titleElement = window.parent.document.querySelector("title");
+        if (titleElement) {
+            observer.observe(titleElement, { childList: true });
+            window.parent.document.title = "Break Bread"; 
+        }
+    </script>
+    """,
+    height=0,
+    width=0,
 )
 
 # ----------------------------
@@ -34,7 +74,6 @@ else:
         h1, h2, h3 { color: #FE8B00 !important; }
     </style>
     """, unsafe_allow_html=True)
-    st.warning("⚠️ custom_styles.css not found. Make sure the 'assets' folder is pushed to GitHub!")
 
 # 2. Safely load the Logo
 logo_path = "assets/break_bread_logo.png"
@@ -42,7 +81,8 @@ def display_logo(width=None, use_container_width=False):
     if os.path.exists(logo_path):
         st.image(logo_path, width=width, use_container_width=use_container_width)
     else:
-        st.markdown("assets/BB_logo.png", unsafe_allow_html=True)
+        # Fallback text if the image isn't found
+        st.markdown("<h1 style='text-align: center; color: #FE8B00; font-size: 3.5rem; font-weight: 700;'>Break Bread</h1>", unsafe_allow_html=True)
 
 
 # ----------------------------
@@ -764,9 +804,9 @@ def show_login():
     with col2:
         # Implementing the safe logo loader here!
         display_logo(use_container_width=True)
-        st.markdown("<assets/BB_logo.png>Build Wealth Together</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: #FFFFFF; margin-bottom: 3rem;'>Build Wealth Together</h3>", unsafe_allow_html=True)
     
-    st.header("assets/BB_logo.png")
+    st.header("Welcome to Break Bread")
 
     tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
 
