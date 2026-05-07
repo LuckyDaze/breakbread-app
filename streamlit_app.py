@@ -807,6 +807,7 @@ def show_login():
         
         # ---> THIS KEEPS "Build Wealth Together" <---
         st.markdown("<h3 style='text-align: center; color: #FFFFFF; margin-bottom: 3rem;'>Build Wealth Together</h3>", unsafe_allow_html=True)
+
 tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
 
     with tab_login:
