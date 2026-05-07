@@ -731,4 +731,4 @@ def show_dashboard(user):
             st.rerun()
 
     st.subheader("Featured Investment Vehicles")
-    i1, i2, i3 = st.columns(3
+    i1, i2, i3 = st.columns(3)
