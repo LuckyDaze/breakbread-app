@@ -288,7 +288,7 @@ def mini_indices():
     return [{"name": idx["name"], "price": idx["price"], "chg_pct": idx["change_percent"]} for idx in get_major_indices()]
 
 # ----------------------------
-# Investment Vehicle Display Functions (WITH BENEFITS & RISKS)
+# Investment Vehicle Display Functions
 # ----------------------------
 def show_stocks_etfs():
     st.subheader("📊 Stocks & ETFs")
@@ -310,9 +310,22 @@ def show_stocks_etfs():
     st.markdown("---")
     b_col, r_col = st.columns(2)
     with b_col:
-        st.success("**✅ Benefits of Stocks/ETFs**\n\n- **High Long-Term Growth:** Historically outpaces inflation.\n- **Liquidity:** Can be bought and sold instantly during market hours.\n- **Passive Income:** Many stocks and ETFs pay regular dividends.\n- **Diversification (ETFs):** Buy a basket of hundreds of stocks with a single purchase.")
+        st.success("""
+        **✅ Benefits of Stocks/ETFs**
+        
+        - **High Long-Term Growth:** Historically outpaces inflation.
+        - **Liquidity:** Can be bought and sold instantly during market hours.
+        - **Passive Income:** Many stocks and ETFs pay regular dividends.
+        - **Diversification (ETFs):** Buy a basket of hundreds of stocks with a single purchase.
+        """)
     with r_col:
-        st.warning("**⚠️ Risks to Consider**\n\n- **Market Volatility:** Prices fluctuate wildly in the short term.\n- **Company Risk:** Individual companies can go bankrupt (mitigated by ETFs).\n- **Emotional Risk:** Easy to panic-sell during market corrections.")
+        st.warning("""
+        **⚠️ Risks to Consider**
+        
+        - **Market Volatility:** Prices fluctuate wildly in the short term.
+        - **Company Risk:** Individual companies can go bankrupt (mitigated by ETFs).
+        - **Emotional Risk:** Easy to panic-sell during market corrections.
+        """)
 
 def show_crypto_assets():
     st.subheader("₿ Cryptocurrencies")
@@ -324,36 +337,73 @@ def show_crypto_assets():
     st.markdown("---")
     b_col, r_col = st.columns(2)
     with b_col:
-        st.success("**✅ Benefits of Crypto**\n\n- **Outsized Growth Potential:** Early-stage asset class with high upside.\n- **24/7 Liquidity:** Markets never close; trade on weekends/holidays.\n- **Decentralization:** No central bank or government controls the network.\n- **Self-Custody:** You can hold your own private keys.")
+        st.success("""
+        **✅ Benefits of Crypto**
+        
+        - **Outsized Growth Potential:** Early-stage asset class with high upside.
+        - **24/7 Liquidity:** Markets never close; trade on weekends/holidays.
+        - **Decentralization:** No central bank or government controls the network.
+        - **Self-Custody:** You can hold your own private keys.
+        """)
     with r_col:
-        st.warning("**⚠️ Risks to Consider**\n\n- **Extreme Volatility:** 50%+ drops are common in bear markets.\n- **Security Flaws:** Exchange hacks and lost passwords mean funds are gone forever.\n- **Regulatory Uncertainty:** Governments can suddenly ban or heavily tax trading.\n- **Speculative:** Most tokens have no underlying cash flow or intrinsic value.")
+        st.warning("""
+        **⚠️ Risks to Consider**
+        
+        - **Extreme Volatility:** 50%+ drops are common in bear markets.
+        - **Security Flaws:** Exchange hacks and lost passwords mean funds are gone forever.
+        - **Regulatory Uncertainty:** Governments can suddenly ban or heavily tax trading.
+        - **Speculative:** Most tokens have no underlying cash flow or intrinsic value.
+        """)
 
 def show_bonds_treasuries():
     st.subheader("📋 Government Bonds & Fixed Income")
     treasury_data = get_treasury_yields()
     col1, col2 = st.columns([2, 1])
     with col1:
-        st.markdown("### Fixed Income Overview\nGovernment bonds provide stable income.")
+        st.markdown("""
+        ### Fixed Income Overview
+        Government bonds provide stable income.
+        """)
         if treasury_data:
             t1, t2, t3 = st.columns(3)
             with t1: st.metric("1-Month", f"{treasury_data['1_month']:.2f}%")
             with t2: st.metric("2-Year", f"{treasury_data['2_year']:.2f}%")
             with t3: st.metric("10-Year", f"{treasury_data['10_year']:.2f}%")
     with col2:
-        st.markdown("### Quick Access\n- **Treasury Bonds**\n- **Municipal Bonds**\n- **Corporate Bonds**")
+        st.markdown("""
+        ### Quick Access
+        - **Treasury Bonds**
+        - **Municipal Bonds**
+        - **Corporate Bonds**
+        """)
 
     st.markdown("---")
     b_col, r_col = st.columns(2)
     with b_col:
-        st.success("**✅ Benefits of Fixed Income**\n\n- **Capital Preservation:** Much safer than stocks.\n- **Predictable Income:** Guaranteed interest payments on a set schedule.\n- **Portfolio Protection:** Bonds often hold value or go up when stocks crash.")
+        st.success("""
+        **✅ Benefits of Fixed Income**
+        
+        - **Capital Preservation:** Much safer than stocks.
+        - **Predictable Income:** Guaranteed interest payments on a set schedule.
+        - **Portfolio Protection:** Bonds often hold value or go up when stocks crash.
+        """)
     with r_col:
-        st.warning("**⚠️ Risks to Consider**\n\n- **Interest Rate Risk:** When new rates go up, existing bond values go down.\n- **Inflation Risk:** Fixed payments might lose purchasing power over time.\n- **Default Risk:** (Corporate bonds only) The company might fail to pay.")
+        st.warning("""
+        **⚠️ Risks to Consider**
+        
+        - **Interest Rate Risk:** When new rates go up, existing bond values go down.
+        - **Inflation Risk:** Fixed payments might lose purchasing power over time.
+        - **Default Risk:** (Corporate bonds only) The company might fail to pay.
+        """)
 
 def show_treasury_bonds():
     st.subheader("🇺🇸 U.S. Treasury Bonds")
     col1, col2 = st.columns([2, 1])
     with col1:
-        st.markdown("### About Treasury Bonds\nConsidered among the safest investments in the world.")
+        st.markdown("""
+        ### About Treasury Bonds
+        Considered among the safest investments in the world.
+        """)
         treasury_data = get_treasury_yields()
         if treasury_data:
             t1, t2, t3 = st.columns(3)
@@ -361,50 +411,455 @@ def show_treasury_bonds():
             with t2: st.metric("2-Year Note", f"{treasury_data.get('2_year', 4.89):.2f}%")
             with t3: st.metric("10-Year Bond", f"{treasury_data.get('10_year', 4.45):.2f}%")
     with col2:
-        st.info("**TreasuryDirect.gov**\n- Direct purchase\n- No fees\n- Min investment: $100")
-        if st.button("🪙 Visit TreasuryDirect", use_container_width=True): st.markdown("[Open TreasuryDirect](https://www.treasurydirect.gov/)")
+        st.info("""
+        **TreasuryDirect.gov**
+        - Direct purchase
+        - No fees
+        - Min investment: $100
+        """)
+        if st.button("🪙 Visit TreasuryDirect", use_container_width=True): 
+            st.markdown("[Open TreasuryDirect](https://www.treasurydirect.gov/)")
 
     st.markdown("---")
     b_col, r_col = st.columns(2)
     with b_col:
-        st.success("**✅ Benefits of Treasuries**\n\n- **Zero Default Risk:** Backed by the full faith and credit of the US Government.\n- **Tax Advantages:** Exempt from state and local taxes.\n- **Highly Liquid:** Easy to sell before maturity on the secondary market.")
+        st.success("""
+        **✅ Benefits of Treasuries**
+        
+        - **Zero Default Risk:** Backed by the full faith and credit of the US Government.
+        - **Tax Advantages:** Exempt from state and local taxes.
+        - **Highly Liquid:** Easy to sell before maturity on the secondary market.
+        """)
     with r_col:
-        st.warning("**⚠️ Risks to Consider**\n\n- **Low Yields:** Generally offers the lowest return of any investment class.\n- **Inflation Drag:** Returns often fail to outpace high inflation.\n- **Opportunity Cost:** Capital tied up here misses out on stock market bull runs.")
+        st.warning("""
+        **⚠️ Risks to Consider**
+        
+        - **Low Yields:** Generally offers the lowest return of any investment class.
+        - **Inflation Drag:** Returns often fail to outpace high inflation.
+        - **Opportunity Cost:** Capital tied up here misses out on stock market bull runs.
+        """)
 
 def show_precious_metals():
     st.subheader("🥇 Precious Metals Investing")
     metals = get_metals_prices()
     col1, col2 = st.columns([2, 1])
     with col1:
-        st.markdown("### Spot Prices\nPrecious metals act as a hedge against fiat currency devaluation.")
+        st.markdown("""
+        ### Spot Prices
+        Precious metals act as a hedge against fiat currency devaluation.
+        """)
         m1, m2, m3 = st.columns(3)
         with m1: st.metric("Gold", f"${metals['gold']:,.2f}/oz")
         with m2: st.metric("Silver", f"${metals['silver']:,.2f}/oz")
         with m3: st.metric("Platinum", f"${metals['platinum']:,.2f}/oz")
     with col2:
-        st.info("**APMEX** - Largest online precious metals dealer\n- Secure storage")
-        if st.button("🪙 Visit APMEX", use_container_width=True): st.markdown("[Open APMEX](https://www.apmex.com/)")
+        st.info("""
+        **APMEX** - Largest online precious metals dealer
+        - Secure storage
+        """)
+        if st.button("🪙 Visit APMEX", use_container_width=True): 
+            st.markdown("[Open APMEX](https://www.apmex.com/)")
 
     st.markdown("---")
     b_col, r_col = st.columns(2)
     with b_col:
-        st.success("**✅ Benefits of Precious Metals**\n\n- **Intrinsic Value:** Tangible asset that cannot go bankrupt or default.\n- **Safe Haven:** Tends to perform well during global crises or market crashes.\n- **Inflation Hedge:** Maintains purchasing power over centuries.")
+        st.success("""
+        **✅ Benefits of Precious Metals**
+        
+        - **Intrinsic Value:** Tangible asset that cannot go bankrupt or default.
+        - **Safe Haven:** Tends to perform well during global crises or market crashes.
+        - **Inflation Hedge:** Maintains purchasing power over centuries.
+        """)
     with r_col:
-        st.warning("**⚠️ Risks to Consider**\n\n- **Zero Yield:** Metals do not produce cash flow, dividends, or interest.\n- **Storage Costs:** Physical gold requires secure safes and insurance.\n- **Market Manipulation:** Paper markets (futures) can artificially suppress physical spot prices.")
+        st.warning("""
+        **⚠️ Risks to Consider**
+        
+        - **Zero Yield:** Metals do not produce cash flow, dividends, or interest.
+        - **Storage Costs:** Physical gold requires secure safes and insurance.
+        - **Market Manipulation:** Paper markets (futures) can artificially suppress physical spot prices.
+        """)
 
 def show_startup_investing():
     st.subheader("🚀 Startup & Equity Crowdfunding")
     col1, col2 = st.columns([2, 1])
     with col1:
-        st.markdown("### Invest in Innovation\nBuy pre-IPO shares in startups via SEC-regulated portals.")
+        st.markdown("""
+        ### Invest in Innovation
+        Buy pre-IPO shares in startups via SEC-regulated portals.
+        """)
     with col2:
         platforms = [("Wefunder", "https://wefunder.com/"), ("StartEngine", "https://startengine.com/")]
         for name, url in platforms:
-            if st.button(f"Visit {name}", key=f"btn_{name}", use_container_width=True): st.markdown(f"[Open {name}]({url})")
+            if st.button(f"Visit {name}", key=f"btn_{name}", use_container_width=True): 
+                st.markdown(f"[Open {name}]({url})")
 
     st.markdown("---")
     b_col, r_col = st.columns(2)
     with b_col:
-        st.success("**✅ Benefits of Startups**\n\n- **Massive Upside:** Potential for 10x to 100x returns if the company IPOs or is acquired.\n- **Support Founders:** Put your money directly behind missions and products you believe in.\n- **Accessible:** Crowdfunding laws now let non-millionaires invest for as little as $100.")
+        st.success("""
+        **✅ Benefits of Startups**
+        
+        - **Massive Upside:** Potential for outsized returns if the company IPOs or is acquired.
+        - **Support Founders:** Put your money directly behind missions and products you believe in.
+        - **Accessible:** Crowdfunding laws now let non-millionaires invest for as little as $100.
+        """)
     with r_col:
-        st.error("**⚠️ Severe Risks to Consider**\n\n- **High Failure Rate:** 90% of startups fail, meaning you will likely lose 100% of your investment.\n- **Extreme Illiquidity:** Your money is locked up. You cannot sell your shares until an exit event (which takes 5-10 years,
+        st.error("""
+        **⚠️ Severe Risks to Consider**
+        
+        - **High Failure Rate:** 90% of startups fail, meaning you will likely lose 100% of your investment.
+        - **Extreme Illiquidity:** Your money is locked up. You cannot sell your shares until an exit event.
+        - **Dilution:** Future funding rounds will shrink your ownership percentage.
+        """)
+
+def show_business_marketplace():
+    st.subheader("🏢 Business Acquisition Marketplace")
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.markdown("""
+        ### Buy an Established Business
+        Skip the startup phase and acquire proven cash flow.
+        """)
+    with col2:
+        st.info("""
+        **BizBuySell** - 45,000+ businesses
+        """)
+        if st.button("🏢 Browse Businesses", use_container_width=True): 
+            st.markdown("[Open BizBuySell](https://www.bizbuysell.com/)")
+
+    st.markdown("---")
+    b_col, r_col = st.columns(2)
+    with b_col:
+        st.success("""
+        **✅ Benefits of Buying a Business**
+        
+        - **Immediate Cash Flow:** Revenue generation starts on day one of ownership.
+        - **Proven Model:** Product-market fit is already established with an existing customer base.
+        - **SBA Financing:** You can often buy a multi-million dollar business with only 10% down.
+        """)
+    with r_col:
+        st.warning("""
+        **⚠️ Risks to Consider**
+        
+        - **Hidden Skeletons:** Poor due diligence can leave you with massive hidden debts or legal issues.
+        - **Transition Friction:** Customers or key employees might leave when the old owner exits.
+        - **Time Intensive:** You are buying a job, not just an asset. It requires immense operational effort.
+        """)
+
+def show_royalty_investing():
+    st.subheader("🎵 Royalty & Intellectual Property Investing")
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.markdown("""
+        ### Invest in Royalties
+        Earn passive income from music, patents, and film rights.
+        """)
+    with col2:
+        st.info("""
+        **Royalty Exchange** - Vetted offerings
+        """)
+        if st.button("🎵 Browse Royalties", use_container_width=True): 
+            st.markdown("[Open Royalty Exchange](https://www.royaltyexchange.com/)")
+
+    st.markdown("---")
+    b_col, r_col = st.columns(2)
+    with b_col:
+        st.success("""
+        **✅ Benefits of Royalties**
+        
+        - **Uncorrelated Returns:** People stream music whether the stock market is up or down.
+        - **High Yields:** Often pays out higher percentage yields than stock dividends.
+        - **Passive Income:** Requires absolutely zero active management once purchased.
+        """)
+    with r_col:
+        st.warning("""
+        **⚠️ Risks to Consider**
+        
+        - **Decay Curve:** Most media assets lose popularity and generate less money over time.
+        - **Platform Risk:** Changes to Spotify or Apple Music payout structures directly impact your bottom line.
+        - **Illiquidity:** Harder to quickly sell royalty rights compared to traditional stocks.
+        """)
+
+def show_municipal_bonds():
+    st.subheader("🏛️ Municipal Bonds")
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.markdown("""
+        ### Invest in Local Communities
+        Debt issued by state/local governments for public projects.
+        """)
+    with col2:
+        st.info("""
+        **MunicipalBonds.com** - Real-time pricing
+        """)
+        if st.button("🏛️ Browse Muni Bonds", use_container_width=True): 
+            st.markdown("[Open MunicipalBonds](https://www.municipalbonds.com/)")
+
+    st.markdown("---")
+    b_col, r_col = st.columns(2)
+    with b_col:
+        st.success("""
+        **✅ Benefits of Muni Bonds**
+        
+        - **Tax-Free Income:** Interest is generally exempt from federal taxes (and state taxes if bought locally).
+        - **High Safety:** Very low default rates historically compared to corporate bonds.
+        - **Community Impact:** Your money directly funds local schools, hospitals, and roads.
+        """)
+    with r_col:
+        st.warning("""
+        **⚠️ Risks to Consider**
+        
+        - **Lower Nominal Yields:** Pre-tax payouts are lower than corporate bonds.
+        - **Interest Rate Risk:** Bond values drop if national interest rates rise.
+        - **Municipality Default:** Rare, but cities can file for bankruptcy (e.g., Detroit, Puerto Rico).
+        """)
+
+def show_universal_research():
+    st.subheader("🔍 Universal Research Tool")
+    col1, col2, col3 = st.columns([2, 1, 1])
+    with col1: symbol = st.text_input("Research Asset", value="AAPL", key="uni_res")
+    with col2: period = st.selectbox("Period", ["1d", "1wk", "1mo", "3mo", "1y"], key="res_per")
+    with col3:
+        st.write("")
+        if st.button("Research Asset", type="primary"):
+            st.session_state.research_symbol = symbol
+            st.rerun()
+    
+    if "research_symbol" in st.session_state:
+        data = get_stock_data(st.session_state.research_symbol, period)
+        if data:
+            c1, c2, c3, _ = st.columns(4)
+            with c1: st.metric("Price", f"${data['current_price']:,.2f}")
+            with c2: st.metric("Change", f"${data['change']:+.2f}")
+            with c3: st.metric("Change %", f"{data['change_percent']:+.2f}%")
+            if not data['historical'].empty:
+                fig = create_price_chart(data['historical'], f"{st.session_state.research_symbol} History")
+                if fig: st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.error("Could not fetch data.")
+
+# ----------------------------
+# UI Components
+# ----------------------------
+def show_login():
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        display_logo(use_container_width=True) 
+        st.markdown(
+            "<h3 style='text-align: center; color: #FFFFFF; margin-bottom: 3rem;'>Build Wealth Together</h3>", 
+            unsafe_allow_html=True
+        )
+    
+    st.header("Welcome to Break Bread")
+    tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
+
+    with tab_login:
+        username = st.text_input("Username", placeholder="janedoe", key="login_user")
+        password = st.text_input("Password", type="password", value="demo123", key="login_pass")
+        if st.button("Login", type="primary"):
+            result = fake_login(username, password)
+            if result["status"] == "SUCCESS":
+                st.session_state.auth_user = result["user_id"]
+                st.rerun()
+            else:
+                st.error(result["message"])
+        st.info("Demo accounts: **janedoe** or **johndoe** with password **demo123**")
+    
+    with tab_signup:
+        st.info("This is a demo app. Use the existing accounts above to login.")
+
+def show_main_app():
+    user = get_user(st.session_state.auth_user)
+    if not user:
+        logout()
+        return
+    
+    with st.sidebar:
+        display_logo(width=150)
+        st.markdown(f"""
+        <div style='background: linear-gradient(135deg, #FE8B00 0%, #FF9A2D 100%); padding: 1.5rem; border-radius: 16px; margin-bottom: 1.5rem; text-align: center;'>
+            <h3 style='color: #000000; margin: 0;'>{user['app_id']}</h3>
+            <p style='color: #000000; margin: 0; opacity: 0.8;'>Break Bread Member</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div style='background-color: #1A1A1A; padding: 1.25rem; border-radius: 16px; border: 1px solid #333; margin-bottom: 1.5rem;'>
+            <p style='color: #888; margin: 0;'>Available Cash</p>
+            <h3 style='color: #FE8B00; margin: 0.5rem 0;'>{format_money(user["balance"])}</h3>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("<h4 style='color: #FFFFFF; margin-bottom: 1rem;'>Navigation</h4>", unsafe_allow_html=True)
+        nav_options = [
+            ("🏠 Dashboard", "Dashboard"), 
+            ("💸 Banking", "Banking"), 
+            ("📈 Markets", "Markets"), 
+            ("⚙️ Settings", "Settings")
+        ]
+        
+        for icon_label, value in nav_options:
+            is_primary = "primary" if st.session_state.get("app_nav_radio") == value else "secondary"
+            if st.button(
+                f"**{icon_label}**", 
+                key=f"nav_{value}", 
+                use_container_width=True, 
+                type=is_primary
+            ):
+                st.session_state.app_nav_radio = value
+                st.rerun()
+
+        st.markdown("---")
+        st.markdown("<h4 style='color: #FFFFFF; margin-bottom: 1rem;'>Market Overview</h4>", unsafe_allow_html=True)
+        for index in mini_indices()[:3]:
+            color = "#00D54B" if index["chg_pct"] >= 0 else "#FF4444"
+            st.markdown(f"""
+            <div style='background-color: #1A1A1A; padding: 1rem; border-radius: 12px; border: 1px solid #333; margin-bottom: 0.5rem; display: flex; justify-content: space-between;'>
+                <span style='color: #FFFFFF;'>{index['name']}</span>
+                <div style='text-align: right;'><div style='color: #FFFFFF;'>{format_money(index['price'])}</div><div style='color: {color}; font-size: 0.8rem;'>{index['chg_pct']:+.2f}%</div></div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("---")
+        if st.button("**🚪 Logout**", use_container_width=True, type="secondary"): 
+            logout()
+
+    nav = st.session_state.get("app_nav_radio")
+    if nav == "Banking": show_banking(user)
+    elif nav == "Markets": show_markets(user)
+    elif nav == "Settings": show_settings(user)
+    else: show_dashboard(user)
+
+def show_dashboard(user):
+    st.header("🏠 Dashboard")
+    st.subheader(f"Welcome back, {user['app_id']}!")
+    
+    col1, col2, col3 = st.columns(3)
+    with col1: st.metric("Cash Balance", format_money(user["balance"]))
+    with col2: st.metric("Portfolio Value", "$0.00")
+    with col3: st.metric("Net Worth", format_money(user["balance"]))
+    
+    st.subheader("Quick Actions")
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        if st.button("💸 Send Money", use_container_width=True):
+            st.session_state.app_nav_radio = "Banking"
+            st.rerun()
+    with c2:
+        if st.button("📈 Invest", use_container_width=True):
+            st.session_state.app_nav_radio = "Markets"
+            st.rerun()
+    with c3:
+        if st.button("💰 Deposit", use_container_width=True, type="primary"):
+            success = simulate_paycheck(user["user_id"])
+            if success: toast_success("💰 $2,000 added!")
+            st.rerun()
+    with c4:
+        if st.button("⚙️ Settings", use_container_width=True):
+            st.session_state.app_nav_radio = "Settings"
+            st.rerun()
+
+    st.subheader("Featured Investment Vehicles")
+    i1, i2, i3 = st.columns(3)
+    features = [
+        ("🏢 Business Marketplace", "Buy established businesses"),
+        ("🏛️ Municipal Bonds", "Tax-free local investments"),
+        ("🎵 Royalty Investing", "Earn from music & patents")
+    ]
+    for col, (title, desc) in zip([i1, i2, i3], features):
+        with col:
+            st.markdown(
+                f"<div style='background-color: #1A1A1A; padding: 1.5rem; border-radius: 12px; border: 1px solid #333;'><h4 style='color: #FE8B00;'>{title}</h4><p style='color: #888;'>{desc}</p></div>", 
+                unsafe_allow_html=True
+            )
+
+def show_banking(user):
+    col1, col2 = st.columns([5, 1])
+    with col1: st.header("💸 Banking")
+    with col2:
+        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+        if st.button("⬅️ Home", key="home_btn_banking", use_container_width=True):
+            st.session_state.app_nav_radio = "Dashboard"
+            st.rerun()
+    
+    st.markdown(f"""
+    <div style='background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 100%); padding: 2rem; border-radius: 20px; margin-bottom: 2rem; border: 1px solid #333;'>
+        <h3 style='color: #FFFFFF; margin: 0 0 0.5rem 0;'>Available Balance</h3>
+        <h1 style='color: #FE8B00; margin: 0; font-size: 2.8rem;'>{format_money(user["balance"])}</h1>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if st.button("**+ Add Cash**", use_container_width=True, type="primary"):
+        success = simulate_paycheck(user["user_id"])
+        if success: toast_success("💰 $2,000 added!")
+        st.rerun()
+
+    tab1, tab2 = st.tabs(["💸 Send Money", "📊 Transaction History"])
+    with tab1:
+        c1, c2 = st.columns(2)
+        with c1:
+            st.subheader("Send Payment")
+            recipient = st.text_input("Recipient", key="send_rec")
+            amount = st.number_input("Amount", min_value=0.01, value=10.0, key="send_amt")
+            if st.button("Send", type="primary"):
+                ok, msg = send_money(user["user_id"], recipient, amount)
+                if ok: 
+                    toast_success(msg); st.rerun()
+                else: 
+                    st.error(msg)
+        with c2:
+            st.subheader("Quick Send")
+            for demo_user in [u for u in st.session_state.users.values() if u["user_id"] != user["user_id"]][:2]:
+                if st.button(f"Send $10 to {demo_user['app_id']}", key=f"quick_{demo_user['user_id']}"):
+                    if send_money(user["user_id"], demo_user["app_id"], 10.0)[0]: st.rerun()
+    
+    with tab2:
+        txs = [t for t in st.session_state.transactions if user["user_id"] in [t["sender_id"], t["recipient_id"]]]
+        if txs:
+            data = []
+            for tx in txs:
+                ttype = "Sent" if tx["sender_id"] == user["user_id"] else "Received"
+                data.append({"Date": tx["ts"].strftime("%Y-%m-%d"), "Type": ttype, "Amount": format_money(tx['amount'])})
+            st.dataframe(pd.DataFrame(data), use_container_width=True)
+        else:
+            st.info("No transactions yet.")
+
+def show_markets(user):
+    col1, col2 = st.columns([5, 1])
+    with col1: st.header("📈 Multi-Asset Markets")
+    with col2:
+        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+        if st.button("⬅️ Home", key="home_btn_markets", use_container_width=True):
+            st.session_state.app_nav_radio = "Dashboard"
+            st.rerun()
+    
+    asset_tabs = st.tabs([
+        "Stocks & ETFs", "Crypto", "Bonds & Treasuries", "Treasury Bonds", 
+        "Precious Metals", "Startup Investing", "Business Marketplace", 
+        "Royalty Investing", "Municipal Bonds"
+    ])
+    
+    with asset_tabs[0]: show_stocks_etfs()
+    with asset_tabs[1]: show_crypto_assets()
+    with asset_tabs[2]: show_bonds_treasuries()
+    with asset_tabs[3]: show_treasury_bonds()
+    with asset_tabs[4]: show_precious_metals()
+    with asset_tabs[5]: show_startup_investing()
+    with asset_tabs[6]: show_business_marketplace()
+    with asset_tabs[7]: show_royalty_investing()
+    with asset_tabs[8]: show_municipal_bonds()
+    
+    st.markdown("---")
+    show_universal_research()
+
+def show_settings(user):
+    col1, col2 = st.columns([5, 1])
+    with col1: st.header("⚙️ Settings")
+    with col2:
+        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+        if st.button("⬅️ Home", key="home_btn_settings", use_container_width=True):
+            st.session_state.app_nav_radio = "Dashboard"
+            st.rerun()
+    
+    st.write(f"**Username:** {user['app_id']}\n**Email:** {user['email']}")
+    dark_mode = st.toggle("Dark
