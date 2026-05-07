@@ -862,4 +862,20 @@ def show_settings(user):
             st.rerun()
     
     st.write(f"**Username:** {user['app_id']}\n**Email:** {user['email']}")
-    dark_mode = st.toggle("Dark
+    dark_mode = st.toggle("Dark Mode", value=True)
+    if st.button("Save Preferences"): st.success("Saved!")
+    st.divider()
+    if st.button("Logout", type="secondary"): logout()
+
+# ----------------------------
+# Main App
+# ----------------------------
+def main():
+    ensure_demo_users()
+    if not st.session_state.get("auth_user"):
+        show_login()
+        return
+    show_main_app()
+
+if __name__ == "__main__":
+    main()
