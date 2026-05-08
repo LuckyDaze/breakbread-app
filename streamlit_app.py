@@ -584,7 +584,52 @@ def show_municipal_bonds():
         - **Interest Rate Risk:** Bond values drop if national interest rates rise.
         - **Municipality Default:** Rare, but cities can file for bankruptcy (e.g., Detroit, Puerto Rico).
         """)
+def show_sports_equine():
+    st.subheader("🏇 Sports & Equine Investing")
+    st.markdown("Buy fractional shares in the future earnings of professional athletes and world-class racehorses.")
+    
+    st.markdown("---")
+    
+    # Platform 1: Commonwealth
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.markdown("### 🏌️‍♂️ Commonwealth")
+        st.write("Diversify your portfolio into sports. Share in tournament prize money and breeding rights while following the athlete's journey.")
+    with col2:
+        st.info("**Commonwealth** - Sports Platform")
+        if st.button("🏌️‍♂️ Visit Commonwealth", use_container_width=True, type="primary", key="btn_cw"): 
+            st.markdown("[Open Commonwealth](https://www.joincommonwealth.com/)")
+            
+    st.markdown("---")
+            
+    # Platform 2: MyRacehorse
+    col3, col4 = st.columns([2, 1])
+    with col3:
+        st.markdown("### 🐎 MyRacehorse")
+        st.write("Buy micro-shares of thoroughbreds. Experience the thrill of ownership, exclusive stable tours, and a share of the prize money.")
+    with col4:
+        st.info("**MyRacehorse** - Equine Platform")
+        if st.button("🐎 Visit MyRacehorse", use_container_width=True, type="primary", key="btn_mrh"): 
+            st.markdown("[Open MyRacehorse](https://myracehorse.com/us)")
 
+    st.markdown("---")
+    b_col, r_col = st.columns(2)
+    with b_col:
+        st.success("""
+        **✅ Benefits of Sports/Equine Investing**
+        
+        - **Uncorrelated Returns:** Asset performance isn't tied to the stock market crashing.
+        - **Experiential Perks:** Access to winner's circles, stable tours, and exclusive events.
+        - **Low Barrier to Entry:** Start owning a share of a premium asset for a fraction of the cost.
+        """)
+    with r_col:
+        st.warning("""
+        **⚠️ Risks to Consider**
+        
+        - **Highly Speculative:** Earnings rely entirely on competitive success, which is never guaranteed.
+        - **Injury Risk:** Athletes and animals can suffer career-ending injuries instantly, dropping value to zero.
+        - **Illiquidity:** Hard to sell shares; you are usually locked in for the athlete/horse's career length.
+        """)
 def show_universal_research():
     st.subheader("🔍 Universal Research Tool")
     col1, col2, col3 = st.columns([2, 1, 1])
@@ -837,7 +882,7 @@ def show_markets(user):
     asset_tabs = st.tabs([
         "Stocks & ETFs", "Crypto", "Bonds & Treasuries", "Treasury Bonds", 
         "Precious Metals", "Startup Investing", "Business Marketplace", 
-        "Royalty Investing", "Municipal Bonds"
+        "Royalty Investing", "Municipal Bonds", "Sports & Equine"
     ])
     
     with asset_tabs[0]: show_stocks_etfs()
@@ -849,10 +894,10 @@ def show_markets(user):
     with asset_tabs[6]: show_business_marketplace()
     with asset_tabs[7]: show_royalty_investing()
     with asset_tabs[8]: show_municipal_bonds()
+    with asset_tabs[9]: show_sports_equine()
     
     st.markdown("---")
     show_universal_research()
-
 def show_settings(user):
     col1, col2 = st.columns([5, 1])
     with col1: st.header("⚙️ Settings")
